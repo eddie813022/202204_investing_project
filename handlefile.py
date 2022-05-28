@@ -23,7 +23,7 @@ def write_pathconfig(type,value):
         ws.cell(row=1,column=2,value=value)
     elif type == "destination":
         ws.cell(row=2,column=2,value=value)
-    wb.save(tempfile)  
+    wb.save(tempfile)
 
 def align_center(root, width, height):
     screenwidth = root.winfo_screenwidth()

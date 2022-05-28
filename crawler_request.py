@@ -10,6 +10,7 @@ from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 from pathlib import Path
 from datetime import date, datetime
+from lxml.etree import ParserError
 import pandas as pd
 import requests
 import random
@@ -731,16 +732,24 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
     savetype = "其它"
     try:
         df1 = pd.read_html(str(xml))[0]
+    except ParserError as f:
+        df1 = pd.DataFrame()
+        profitloss = 0
+        error = "季報表，"+str(f)
     except Exception as e:
         df1 = pd.DataFrame()
         profitloss = 0
-        error = "損益表季，"+e
+        error = "季報表，"+e
     try:
         df2 = pd.read_html(str(xml2))[0]
+    except ParserError as f:
+        df1 = pd.DataFrame()
+        profitloss = 0
+        error = "年報表，"+str(f)
     except Exception as e:
         df2 = pd.DataFrame()
         profitloss = 0
-        error = "損益表年，"+e
+        error = "年報表，"+e
     if not df1.empty and not df2.empty:
         if len(df1.index) == 36:
             bold_list = ["總收入", "毛利", "經營開支總額", "營業收入", "稅前淨收益", "稅後淨收益",
@@ -748,23 +757,33 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             frame1_to_rows = list(dataframe_to_rows(
                 df1, index=False, header=False))
             end_date = frame1_to_rows[-1]
-            end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5]
-                        for i in end_date]
-            end_date[0] = "結束日期："
+            clean_end_date = []
+            for date in end_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                    clean_end_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end_date.append("")
+            clean_end_date[0] = "結束日期："
             frame1_to_rows.pop(1)
             frame1_to_rows.pop(6)
             frame1_to_rows.pop(-1)
-            frame1_to_rows.insert(0, end_date)
+            frame1_to_rows.insert(0, clean_end_date)
             frame2_to_rows = list(dataframe_to_rows(
                 df2, index=False, header=False))
             end2_date = frame2_to_rows[-1]
-            end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                         for i in end2_date]
-            end2_date[0] = "結束日期："
+            clean_end2_date = []
+            for date in end2_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                    clean_end2_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end2_date.append("")
+            clean_end2_date[0] = "結束日期："
             frame2_to_rows.pop(1)
             frame2_to_rows.pop(6)
             frame2_to_rows.pop(-1)
-            frame2_to_rows.insert(0, end2_date)
+            frame2_to_rows.insert(0, clean_end2_date)
             for i in frame1_to_rows:
                 for index, value in enumerate(i):
                     if i[index] == "-":
@@ -800,23 +819,33 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             frame1_to_rows = list(dataframe_to_rows(
                 df1, index=False, header=False))
             end_date = frame1_to_rows[-1]
-            end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5]
-                        for i in end_date]
-            end_date[0] = "結束日期："
+            clean_end_date = []
+            for date in end_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                    clean_end_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end_date.append("")
+            clean_end_date[0] = "結束日期："
             frame1_to_rows.pop(1)
             frame1_to_rows.pop(6)
             frame1_to_rows.pop(-1)
-            frame1_to_rows.insert(0, end_date)
+            frame1_to_rows.insert(0, clean_end_date)
             frame2_to_rows = list(dataframe_to_rows(
                 df2, index=False, header=False))
             end2_date = frame2_to_rows[-1]
-            end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                         for i in end2_date]
-            end2_date[0] = "結束日期："
+            clean_end2_date = []
+            for date in end2_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                    clean_end2_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end2_date.append("")
+            clean_end2_date[0] = "結束日期："
             frame2_to_rows.pop(1)
             frame2_to_rows.pop(6)
             frame2_to_rows.pop(-1)
-            frame2_to_rows.insert(0, end2_date)
+            frame2_to_rows.insert(0, clean_end2_date)
             for i in frame1_to_rows:
                 for index, value in enumerate(i):
                     if i[index] == "-":
@@ -852,21 +881,31 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             frame1_to_rows = list(dataframe_to_rows(
                 df1, index=False, header=False))
             end_date = frame1_to_rows[-1]
-            end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5]
-                        for i in end_date]
-            end_date[0] = "結束日期："
+            clean_end_date = []
+            for date in end_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                    clean_end_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end_date.append("")
+            clean_end_date[0] = "結束日期："
             frame1_to_rows.pop(1)
             frame1_to_rows.pop(-1)
-            frame1_to_rows.insert(0, end_date)
+            frame1_to_rows.insert(0, clean_end_date)
             frame2_to_rows = list(dataframe_to_rows(
                 df2, index=False, header=False))
             end2_date = frame2_to_rows[-1]
-            end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                         for i in end2_date]
-            end2_date[0] = "結束日期："
+            clean_end2_date = []
+            for date in end2_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                    clean_end2_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end2_date.append("")
+            clean_end2_date[0] = "結束日期："
             frame2_to_rows.pop(1)
             frame2_to_rows.pop(-1)
-            frame2_to_rows.insert(0, end2_date)
+            frame2_to_rows.insert(0, clean_end2_date)
             for i in frame1_to_rows:
                 for index, value in enumerate(i):
                     if i[index] == "-":
@@ -897,47 +936,59 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             error = 0
             savetype = "銀行"
         else:
-            try:
-                frame1_to_rows = list(dataframe_to_rows(
-                    df1, index=False, header=False))
-                end_date = frame1_to_rows[-1]
-                end_date = [i[0:4]+"/" +
-                            i[i.find("/")+1:]+"/"+i[4:6] for i in end2_date]
-                end_date[0] = "結束日期："
-                frame1_to_rows.pop(1)
-                frame1_to_rows.pop(-1)
-                frame1_to_rows.insert(0, end_date)
-                frame2_to_rows = list(dataframe_to_rows(
-                    df2, index=False, header=False))
-                end_date = frame2_to_rows[-1]
-                end2_date = [i[0:4]+"/" +
-                             i[i.find("/")+1:]+"/"+i[4:6] for i in end2_date]
-                end2_date[0] = "結束日期："
-                frame2_to_rows.pop(1)
-                frame2_to_rows.pop(-1)
-                frame2_to_rows.insert(0, end_date)
-                for i in frame1_to_rows:
-                    for index, value in enumerate(i):
-                        if i[index] == "-":
-                            i[index] = ""
-                for i in frame2_to_rows:
-                    for index, value in enumerate(i):
-                        if i[index] == "-":
-                            i[index] = ""
-                for i in final1_rows:
-                    ws1.append(styled_cells(
-                        data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws1))
-                for i in final2_rows:
-                    ws2.append(styled_cells(
-                        data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws2))
-                profitloss = 1
-                error = 0
-            except Exception as e:
-                frame1_to_rows = []
-                frame2_to_rows = []
-                profitloss = 1
-                error = e
-                savetype = "其它"
+            error = "df行數" + str(len(df1.index))
+            profitloss = 1
+            # try:
+            #     frame1_to_rows = list(dataframe_to_rows(
+            #         df1, index=False, header=False))
+            #     end_date = frame1_to_rows[-1]
+            #     clean_end_date = []
+            #     for date in end_date:
+            #         if str(date) != "nan":
+            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+            #             clean_end_date.append(date_string)
+            #         if str(date) == "nan":
+            #             clean_end_date.append("")
+            #     clean_end_date[0] = "結束日期："
+            #     frame1_to_rows.pop(1)
+            #     frame1_to_rows.pop(-1)
+            #     frame1_to_rows.insert(0, clean_end_date)
+            #     frame2_to_rows = list(dataframe_to_rows(
+            #         df2, index=False, header=False))
+            #     end_date = frame2_to_rows[-1]
+            #     clean_end2_date = []
+            #     for date in end2_date:
+            #         if str(date) != "nan":
+            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+            #             clean_end2_date.append(date_string)
+            #         if str(date) == "nan":
+            #             clean_end2_date.append("")
+            #     clean_end2_date[0] = "結束日期："
+            #     frame2_to_rows.pop(1)
+            #     frame2_to_rows.pop(-1)
+            #     frame2_to_rows.insert(0, clean_end2_date)
+            #     for i in frame1_to_rows:
+            #         for index, value in enumerate(i):
+            #             if i[index] == "-":
+            #                 i[index] = ""
+            #     for i in frame2_to_rows:
+            #         for index, value in enumerate(i):
+            #             if i[index] == "-":
+            #                 i[index] = ""
+            #     for i in final1_rows:
+            #         ws1.append(styled_cells(
+            #             data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws1))
+            #     for i in final2_rows:
+            #         ws2.append(styled_cells(
+            #             data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws2))
+            #     profitloss = 1
+            #     error = 0
+            # except Exception as e:
+            #     frame1_to_rows = []
+            #     frame2_to_rows = []
+            #     profitloss = 1
+            #     error = e
+            #     savetype = "其它"
     return int(profitloss), error, savetype
 
 
@@ -1002,29 +1053,39 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             frame1_to_rows = list(dataframe_to_rows(
                 df1, index=False, header=False))  # 48rows
             end_date = frame1_to_rows[-1]
-            end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5]
-                        for i in end_date]
-            end_date[0] = "結束日期："
+            clean_end_date = []
+            for date in end_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                    clean_end_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end_date.append("")
+            clean_end_date[0] = "結束日期："
             frame1_to_rows.pop(1)
             frame1_to_rows.pop(11)
             frame1_to_rows.pop(21)
             frame1_to_rows.pop(28)
             frame1_to_rows.pop(35)
             frame1_to_rows.pop(-1)
-            frame1_to_rows.insert(0, end_date)
+            frame1_to_rows.insert(0, clean_end_date)
             frame2_to_rows = list(dataframe_to_rows(
                 df2, index=False, header=False))
             end2_date = frame2_to_rows[-1]
-            end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                         for i in end2_date]
-            end2_date[0] = "結束日期："
+            clean_end2_date = []
+            for date in end2_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                    clean_end2_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end2_date.append("")
+            clean_end2_date[0] = "結束日期："
             frame2_to_rows.pop(1)
             frame2_to_rows.pop(11)
             frame2_to_rows.pop(21)
             frame2_to_rows.pop(28)
             frame2_to_rows.pop(35)
             frame2_to_rows.pop(-1)
-            frame2_to_rows.insert(0, end2_date)
+            frame2_to_rows.insert(0, clean_end2_date)
             for i in frame1_to_rows:
                 for index, value in enumerate(i):
                     if i[index] == "-":
@@ -1059,25 +1120,35 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             frame1_to_rows = list(dataframe_to_rows(
                 df1, index=False, header=False))  # 46rows
             end_date = frame1_to_rows[-1]
-            end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5]
-                        for i in end_date]
-            end_date[0] = "結束日期："
+            clean_end_date = []
+            for date in end_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                    clean_end_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end_date.append("")
+            clean_end_date[0] = "結束日期："
             frame1_to_rows.pop(2)
             frame1_to_rows.pop(19)
             frame1_to_rows.pop(33)
             frame1_to_rows.pop(-1)
-            frame1_to_rows.insert(0, end_date)
+            frame1_to_rows.insert(0, clean_end_date)
             frame2_to_rows = list(dataframe_to_rows(
                 df2, index=False, header=False))
             end2_date = frame2_to_rows[-1]
-            end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                         for i in end2_date]
-            end2_date[0] = "結束日期："
+            clean_end2_date = []
+            for date in end2_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                    clean_end2_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end2_date.append("")
+            clean_end2_date[0] = "結束日期："
             frame2_to_rows.pop(2)
             frame2_to_rows.pop(19)
             frame2_to_rows.pop(33)
             frame2_to_rows.pop(-1)
-            frame2_to_rows.insert(0, end2_date)
+            frame2_to_rows.insert(0, clean_end2_date)
             for i in frame1_to_rows:
                 for index, value in enumerate(i):
                     if i[index] == "-":
@@ -1112,25 +1183,35 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             frame1_to_rows = list(dataframe_to_rows(
                 df1, index=False, header=False))  # 43rows
             end_date = frame1_to_rows[-1]
-            end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5]
-                        for i in end_date]
-            end_date[0] = "結束日期："
+            clean_end_date = []
+            for date in end_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                    clean_end_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end_date.append("")
+            clean_end_date[0] = "結束日期："
             frame1_to_rows.pop(2)
             frame1_to_rows.pop(15)
             frame1_to_rows.pop(30)
             frame1_to_rows.pop(-1)
-            frame1_to_rows.insert(0, end_date)
+            frame1_to_rows.insert(0, clean_end_date)
             frame2_to_rows = list(dataframe_to_rows(
                 df2, index=False, header=False))
             end2_date = frame2_to_rows[-1]
-            end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                         for i in end2_date]
-            end2_date[0] = "結束日期："
+            clean_end2_date = []
+            for date in end2_date:
+                if str(date) != "nan":
+                    date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                    clean_end2_date.append(date_string)
+                if str(date) == "nan":
+                    clean_end2_date.append("")
+            clean_end2_date[0] = "結束日期："
             frame2_to_rows.pop(2)
             frame2_to_rows.pop(15)
             frame2_to_rows.pop(30)
             frame2_to_rows.pop(-1)
-            frame2_to_rows.insert(0, end_date)
+            frame2_to_rows.insert(0, clean_end2_date)
             for i in frame1_to_rows:
                 for index, value in enumerate(i):
                     if i[index] == "-":
@@ -1160,32 +1241,44 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
             balance = 0
             error = 0
         else:
-            try:
-                frame1_to_rows = list(dataframe_to_rows(
-                    df1, index=False, header=False))
-                end_date = frame1_to_rows[-1]
-                end_date = [i[0:4]+"/" +
-                            i[i.find("/")+1:]+"/"+i[3:5] for i in end_date]
-                end_date[0] = "結束日期："
-                frame1_to_rows.pop(1)
-                frame1_to_rows.pop(-1)
-                frame1_to_rows.insert(0, end_date)
-                frame2_to_rows = list(dataframe_to_rows(
-                    df2, index=False, header=False))
-                end_date = frame2_to_rows[-1]
-                end2_date = [i[0:4]+"/" +
-                             i[i.find("/")+1:]+"/"+i[4:6] for i in end2_date]
-                end2_date[0] = "結束日期："
-                frame2_to_rows.pop(1)
-                frame2_to_rows.pop(-1)
-                frame2_to_rows.insert(0, end_date)
-                balance = 1
-                error = 0
-            except Exception as e:
-                frame1_to_rows = []
-                frame2_to_rows = []
-                balance = 1
-                error = e
+            error = "df行數" + str(len(df1.index))
+            balance = 1
+            # try:
+            #     frame1_to_rows = list(dataframe_to_rows(
+            #         df1, index=False, header=False))
+            #     end_date = frame1_to_rows[-1]
+            #     clean_end_date = []
+            #     for date in end_date:
+            #         if str(date) != "nan":
+            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+            #             clean_end_date.append(date_string)
+            #         if str(date) == "nan":
+            #             clean_end_date.append("")
+            #     clean_end_date[0] = "結束日期："
+            #     frame1_to_rows.pop(1)
+            #     frame1_to_rows.pop(-1)
+            #     frame1_to_rows.insert(0, clean_end_date)
+            #     frame2_to_rows = list(dataframe_to_rows(
+            #         df2, index=False, header=False))
+            #     end2_date = frame2_to_rows[-1]
+            #     clean_end2_date = []
+            #     for date in end2_date:
+            #         if str(date) != "nan":
+            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+            #             clean_end2_date.append(date_string)
+            #         if str(date) == "nan":
+            #             clean_end2_date.append("")
+            #     clean_end2_date[0] = "結束日期："
+            #     frame2_to_rows.pop(1)
+            #     frame2_to_rows.pop(-1)
+            #     frame2_to_rows.insert(0, clean_end2_date)
+            #     balance = 1
+            #     error = 0
+            # except Exception as e:
+            #     frame1_to_rows = []
+            #     frame2_to_rows = []
+            #     balance = 1
+            #     error = e
     return balance, error
 
 
@@ -1230,29 +1323,50 @@ def get_stock_cashflow(pair_id, choose1_list, ws1, ws2):
             df1, index=False, header=False))
         end_date = frame1_to_rows[-2]
         end_date_range = frame1_to_rows[-1]
-        end_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[3:5] for i in end_date]
-        end_date[0] = "結束日期："
+        clean_end_date_range = []
+        for i in end_date_range:
+            if len(i) <2:
+                i = ""
+            clean_end_date_range.append(i)
+        clean_end_date = []
+        for date in end_date:
+            if str(date) != "nan":
+                date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
+                clean_end_date.append(date_string)
+            if str(date) == "nan":
+                clean_end_date.append("")
+        clean_end_date[0] = "結束日期："
         frame1_to_rows.pop(2)
         frame1_to_rows.pop(12)
         frame1_to_rows.pop(15)
         frame1_to_rows.pop(-1)
         frame1_to_rows.pop(-1)
-        frame1_to_rows.insert(0, end_date_range)
-        frame1_to_rows.insert(0, end_date)
+        frame1_to_rows.insert(0, clean_end_date_range)
+        frame1_to_rows.insert(0, clean_end_date)
         frame2_to_rows = list(dataframe_to_rows(
             df2, index=False, header=False))
         end2_date = frame2_to_rows[-2]
         end2_date_range = frame2_to_rows[-1]
-        end2_date = [i[0:4]+"/"+i[i.find("/")+1:]+"/"+i[4:6]
-                     for i in end2_date]
-        end2_date[0] = "結束日期："
+        clean_end2_date_range = []
+        for i in end2_date_range:
+            if len(i) <2:
+                i = ""
+            clean_end2_date_range.append(i)
+        clean_end2_date = []
+        for date in end2_date:
+            if str(date) != "nan":
+                date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
+                clean_end2_date.append(date_string)
+            if str(date) == "nan":
+                clean_end2_date.append("")
+        clean_end2_date[0] = "結束日期："
         frame2_to_rows.pop(2)
         frame2_to_rows.pop(12)
         frame2_to_rows.pop(15)
         frame2_to_rows.pop(-1)
         frame2_to_rows.pop(-1)
-        frame2_to_rows.insert(0, end2_date_range)
-        frame2_to_rows.insert(0, end2_date)
+        frame2_to_rows.insert(0, clean_end2_date_range)
+        frame2_to_rows.insert(0, clean_end2_date)
         for i in frame1_to_rows:
             for index, value in enumerate(i):
                 if i[index] == "-":
@@ -1549,52 +1663,52 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
         autowidth(sheet)
     if profiloss_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "損益表"+str(profiloss_error)]
+            datetime.now()), "損益表 - "+str(profiloss_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif balance_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "資產負債表"+str(balance_error)]
+            datetime.now()), "資產負債表 - "+str(balance_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif cash_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "現金流量表"+str(cash_error)]
+            datetime.now()), "現金流量表 - "+str(cash_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif radio_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "比率"+str(radio_error)]
+            datetime.now()), "比率 - "+str(radio_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif inventory_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "綜觀"+str(inventory_error)]
+            datetime.now()), "綜觀 - "+str(inventory_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif profile_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "簡介"+str(profile_error)]
+            datetime.now()), "簡介 - "+str(profile_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif history_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "歷史資料"+str(history_error)]
+            datetime.now()), "歷史資料 - "+str(history_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif financials_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "財務摘要"+str(financials_error)]
+            datetime.now()), "財務摘要 - "+str(financials_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif dividend_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "股利"+str(dividend_error)]
+            datetime.now()), "股利 - "+str(dividend_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     elif financial2_error:
         error_write = [i[0], i[1], i[2], str(
-            datetime.now()), "財報"+str(financial2_error)]
+            datetime.now()), "財報 - "+str(financial2_error)]
         error_ws.append(error_write)
         error_wb.save(errorfile)
     else:
