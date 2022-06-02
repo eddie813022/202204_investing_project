@@ -401,7 +401,6 @@ def get_stock_inventory(url, ws):
     res.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml")
     h1parser = xml.find("h1").get_text()
-    # TODO網站確認有抓到，是否為try-except時出問題導致抓到空值
     stockpair = h1parser[h1parser.find("("):h1parser.find(")")+1]
     ws1_column_list = []
     try:
@@ -1439,7 +1438,7 @@ def get_stock_ratio(url, ws):
         ws.append(i)
 
 
-"""抓取股利"""
+"""抓取股息"""
 # https://hk.investing.com/equities/apple-computer-inc
 
 
@@ -1714,7 +1713,7 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
     else:
         wb.save(store_path)
         error_wb.save(errorfile)
-    # return profiloss_error#TODO這邊要做錯誤分類回傳
+
 
 # get_dividend(url="https://hk.investing.com/equities/taiwan-semicon")
 # get_profitandloss(pair_id="1012665")

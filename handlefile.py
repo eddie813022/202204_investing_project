@@ -9,11 +9,11 @@ from icon import img
 import tkinter as tk
 import threading
 import pythoncom
-import time 
+import time
 import copy
 import base64
 import babel.numbers
-import os 
+import os
 
 def write_pathconfig(type,value):
     tempfile = Path.cwd() / "exceltemp.xlsx"
@@ -153,10 +153,10 @@ def copy_newkey30_xlsx(examplewb,source_wb,destination_wb):
                     target_cell.alignment = copy.copy(source_cell.alignment)
     wb2.save(destination_wb)
     wb.close()
-    wb2.close()  
-    
+    wb2.close()
+
 def general_final1and2_event():
-    excel_timer_lb.place_forget() 
+    excel_timer_lb.place_forget()
     sample_excel = final1and2_text.get("1.0","end-1c")
     if not sample_excel:
         stext.config(state="normal")
@@ -182,7 +182,7 @@ def general_final1and2_event():
         return False
     destination_pwd = Path(destination_path_text.get("1.0","end-1c"))
     for dir in source_pwd.iterdir():
-        full_path = dir 
+        full_path = dir
         filename = dir.name
         save_path = destination_pwd / filename
         copy_final1and2_xlsx(examplewb=sample_excel,source_wb=full_path,destination_wb=save_path)
@@ -204,15 +204,15 @@ def generator_key30_event():
         stext.config(state="disable")
         return False
     nowtime = time.localtime()
-    time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime) 
-    save_timestraing = time.strftime("%Y-%m-%d", nowtime) 
+    time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime)
+    save_timestraing = time.strftime("%Y-%m-%d", nowtime)
     save_path = save_timestraing+"-關鍵30.xlsx"
     destination_pwd = Path(destination_path_text.get("1.0","end-1c")) / save_path
     if destination_pwd.is_file():
         stext.config(state="normal")
         stext.insert(tk.END,time_string+" ----- "+"已有生成關鍵30資料."+"\n")
         stext.see(tk.END)
-        stext.config(state="disable")  
+        stext.config(state="disable")
         return False
     key30wb = Workbook()
     key30ws = key30wb.active
@@ -230,11 +230,11 @@ def generator_key30_event():
     except:
         stext.config(state="normal")
         nowtime = time.localtime()
-        time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime) 
-        save_timestraing = time.strftime("%Y-%m-%d", nowtime) 
+        time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime)
+        save_timestraing = time.strftime("%Y-%m-%d", nowtime)
         stext.insert(tk.END,time_string+" ----- "+first_wbname+"未找到final2工作簿."+"\n")
         stext.see(tk.END)
-        stext.config(state="disable")  
+        stext.config(state="disable")
     counter = len(list(source_pwd.iterdir()))*2
     nowrtime = time.time()
     finaltime = nowrtime + counter
@@ -246,7 +246,7 @@ def generator_key30_event():
     base_column = 0
     for dir in source_pwd.iterdir():
         start = perf_counter()
-        full_path = dir 
+        full_path = dir
         filename = dir.name
         try:
             just_open(filename=full_path)
@@ -258,38 +258,38 @@ def generator_key30_event():
             print("複製資料失敗",e)
         stext.config(state="normal")
         nowtime = time.localtime()
-        time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime) 
-        save_timestraing = time.strftime("%Y-%m-%d", nowtime) 
+        time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime)
+        save_timestraing = time.strftime("%Y-%m-%d", nowtime)
         stext.insert(tk.END,time_string+" ----- "+filename+"生成完畢."+"\n")
         stext.see(tk.END)
-        stext.config(state="disable")  
+        stext.config(state="disable")
         print(f"Cost: {perf_counter() - start}")
         if not base_row:
             nowtime = time.localtime()
-            time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime) 
-            save_timestraing = time.strftime("%Y-%m-%d", nowtime) 
+            time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime)
+            save_timestraing = time.strftime("%Y-%m-%d", nowtime)
             stext.config(state="normal")
             stext.insert(tk.END,time_string+" ----- "+filename+"未找到final2工作簿."+"\n")
             stext.see(tk.END)
-            stext.config(state="disable")  
+            stext.config(state="disable")
             return False
     key30wb.save(destination_pwd)
     nowtime = time.localtime()
-    time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime) 
-    save_timestraing = time.strftime("%Y-%m-%d", nowtime) 
+    time_string = time.strftime("%Y-%m-%d %H:%M:%S", nowtime)
+    save_timestraing = time.strftime("%Y-%m-%d", nowtime)
     stext.config(state="normal")
     stext.insert(tk.END,time_string+" ----- 關鍵30資料生成完畢."+"\n")
     stext.see(tk.END)
-    stext.config(state="disable")  
-    pythoncom.CoUninitialize() 
+    stext.config(state="disable")
+    pythoncom.CoUninitialize()
 
 def general_key30_event():
     key30_td = threading.Thread(target=generator_key30_event)
     key30_td.setDaemon(True)
-    key30_td.start() 
+    key30_td.start()
 
 def general_newkey30_event():
-    excel_timer_lb.place_forget() 
+    excel_timer_lb.place_forget()
     key30_path = key30_text.get("1.0","end-1c")
     if not key30_path:
         stext.config(state="normal")
@@ -315,7 +315,7 @@ def general_newkey30_event():
         return False
     destination_pwd = Path(destination_path_text.get("1.0","end-1c"))
     for dir in source_pwd.iterdir():
-        full_path = dir 
+        full_path = dir
         filename = "新"+dir.name
         save_path = destination_pwd / filename
         copy_newkey30_xlsx(examplewb=key30_path,source_wb=full_path,destination_wb=save_path)
@@ -338,16 +338,16 @@ if tempfile.is_file():
     destination_path = ws.cell(row=2,column=2).value
     wb.close()
 else:
-    wb = Workbook()   
+    wb = Workbook()
     ws = wb.active
     ws.cell(row=1,column=1,value="source")
-    ws.cell(row=2,column=1,value="destination")    
+    ws.cell(row=2,column=1,value="destination")
     ws.cell(row=1,column=2,value="C:/")
     ws.cell(row=2,column=2,value="C:/")
     source_path = ws.cell(row=1,column=2).value
     destination_path = ws.cell(row=2,column=2).value
     wb.save(tempfile)
-    
+
 # gui configure
 tmp = open("tmp.ico","wb+")
 tmp.write(base64.b64decode(img))
@@ -364,7 +364,7 @@ windw_style.configure("red.Horizontal.TProgressbar", foreground='green', backgro
 os.remove("tmp.ico")
 
 align_center(window,1000,600)
-window.update_idletasks() 
+window.update_idletasks()
 
 final1and2_lb = tk.Label(window,text="合併範例檔案： ",font=("新細明體",12),anchor="e")
 final1and2_lb.place(relx=0.01,rely=0.05,relwidth=0.2)

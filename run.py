@@ -22,7 +22,7 @@ tmp.close()
 window = tk.Tk()
 # gui favicon configure
 window.iconbitmap("tmp.ico")
-window.title('investing_v1.6')
+window.title('investing_v2.1')
 window.resizable(False,False)
 # gui theme configure
 windw_style = ttk.Style(window)
@@ -113,7 +113,7 @@ def country_select_event():
             stext.insert(tk.END,"=====================================\n")
             stext.insert(tk.END,"正在查詢"+country_name+"交易所數量..\n")
             exchange_dict = get_exchang_dict({country_name:country_code})
-            market_btn.set("")        # 將選項清空
+            market_btn.set("") # 將選項清空
             market_list = exchange_dict
             market_name_list = [ i for i in market_list ]
             market_btn["value"] = market_name_list
@@ -147,12 +147,12 @@ def country_enter_envet():
             stext.see(tk.END)
         stext.insert(tk.END,"=====================================\n")
         stext.config(state="disable")
-        
+
 def country_btn_event(event):
     country_btn_td = threading.Thread(target=country_select_event)
     country_btn_td.setDaemon(True)
     country_btn_td.start()
-    
+
 def country_btn_enter_event(event):
     country_select_td = threading.Thread(target=country_enter_envet)
     country_select_td.setDaemon(True)
@@ -171,7 +171,7 @@ def loading_evnet(num):
             time.sleep(1)
     progress["value"] = 100
     window.update()
-    
+
 def loading2_evnet(num):
     if num < 100:
         addnum = int(100 / num)
@@ -202,7 +202,7 @@ def singlecrawler_btn_event():
     single_btn_td = threading.Thread(target=singledownload_event)
     single_btn_td.setDaemon(True)
     single_btn_td.start()
-    
+
 def bulkcrawler_btn_event():
     bulk_btn_td = threading.Thread(target=bulkdownload_event)
     bulk_btn_td.setDaemon(True)
@@ -212,12 +212,12 @@ def crawlerstocklist_btn_event():
     stocklist_btn_td = threading.Thread(target=crawlerstocklist_event)
     stocklist_btn_td.setDaemon(True)
     stocklist_btn_td.start()
-    
+
 def stopcrawler_btn_event():
     stop_btn_td =threading.Thread(target=stopcrawler_event)
     stop_btn_td.setDaemon(True)
     stop_btn_td.start()
-    
+
 def crawlerstocklist_event():
     progress["value"] = 0
     stocktimer_lb.place_forget() 
@@ -298,9 +298,9 @@ def crawlerstocklist_event():
     bulkcrawler_btn.config(state="normal")
     bulk_start_btn.config(state="normal")
     singlecrawler_btn.config(state="normal")
-     
+
 def singledownload_event():
-    stocktimer_lb.place_forget() 
+    stocktimer_lb.place_forget()
     progress["value"] = 0
     entertext = ""
     crawlerstocklist_btn.config(state="disable")
@@ -318,7 +318,7 @@ def singledownload_event():
         f2general_choose_list = [ globals()["f2_in_f1_va"+str(i)].get() for i in range(len(f2_1_var_namelist)) ]
         f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(f2_2_var_namelist)) ]
         f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(f2_3_var_namelist)) ]
-        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(f3_1_var_namelist)) ]    
+        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(f3_1_var_namelist)) ]
         download_path = Path(downloadpath_text.get("1.0","end-1c"))
         start_date = start_date_btn.get()
         end_date = end_date_btn.get()
@@ -386,7 +386,7 @@ def singledownload_event():
     bulkcrawler_btn.config(state="normal")
     bulk_start_btn.config(state="normal")
     singlecrawler_btn.config(state="normal")
-    
+
 def bulkdownload_event():
     global stop_threads
     stop_threads = False
@@ -413,7 +413,7 @@ def bulkdownload_event():
         f2general_choose_list = [ globals()["f2_in_f1_va"+str(i)].get() for i in range(len(f2_1_var_namelist)) ]
         f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(f2_2_var_namelist)) ]
         f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(f2_3_var_namelist)) ]
-        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(f3_1_var_namelist)) ]    
+        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(f3_1_var_namelist)) ]
         download_path = Path(bulkdownloadpath_text.get("1.0","end-1c"))
         start_date = start_date_btn.get()
         end_date = end_date_btn.get()
@@ -450,7 +450,7 @@ def bulkdownload_event():
             stocktimer_lb.place(relx=0.53,rely=0.88)
             stext.config(state="normal")
             stext.insert(tk.END,"=====================================\n")
-            stext.insert(tk.END,f"預計完成時間為{time_string}.\n") 
+            stext.insert(tk.END,f"預計完成時間為{time_string}.\n")
             stext.insert(tk.END,"=====================================\n")
             stext.see(tk.END)
             stext.config(state="disable")
@@ -480,14 +480,14 @@ def bulkdownload_event():
                     stext.config(state="disable")
                     last_index += 1
                     wb.save(stock_path)
-                    stocktimer_lb.place_forget() 
+                    stocktimer_lb.place_forget()
                     break
                 ws.cell(row=last_index,column=4,value="finished")
                 stext.config(state="normal")
                 stext.insert(tk.END, f"完成抓取第{last_index}個，({name})個股.\n")
                 stext.insert(tk.END,"=====================================\n")
                 stext.see(tk.END)
-                stext.config(state="disable")    
+                stext.config(state="disable")
                 last_index += 1
             wb.save(stock_path)
             progress["value"] = 100
@@ -512,9 +512,9 @@ def bulkdownload_event():
     progress["value"] = 100
 
 def stopcrawler_event():
-    global stop_threads 
+    global stop_threads
     progress["value"] = 0
-    stocktimer_lb.place_forget() 
+    stocktimer_lb.place_forget()
     if stop_threads:
         stext.config(state="normal")
         stext.insert(tk.END,"=====================================\n")
@@ -539,7 +539,7 @@ def f1_f1_selectall_event():
 def f1_f1_dselectall_event():
     for i in range(len(frame1_1_check_btn_list)):
         globals()["f1_in_f1_btn"+str(i)].deselect()
-        
+
 def f1_f2_selectall_event():
     for i in range(len(frame1_2_check_btn_list)):
         globals()["f1_in_f2_btn"+str(i)].select()
@@ -551,7 +551,7 @@ def f1_f2_dselectall_event():
 def f1_f3_selectall_event():
     for i in range(len(frame1_3_check_btn_list)):
         globals()["f1_in_f3_btn"+str(i)].select()
-        
+
 def f1_f3_dselectall_event():
     for i in range(len(frame1_3_check_btn_list)):
         globals()["f1_in_f3_btn"+str(i)].deselect()
@@ -563,7 +563,7 @@ def f2_f1_selectall_event():
 def f2_f1_dselectall_event():
     for i in range(len(frame2_1_check_btn_list)):
         globals()["f2_in_f1_btn"+str(i)].deselect()
-        
+
 def f2_f2_selectall_event():
     for i in range(len(frame2_2_check_btn_list)):
         globals()["f2_in_f2_btn"+str(i)].select()
@@ -571,15 +571,15 @@ def f2_f2_selectall_event():
 def f2_f2_dselectall_event():
     for i in range(len(frame2_2_check_btn_list)):
         globals()["f2_in_f2_btn"+str(i)].deselect()
-        
+
 def f2_f3_selectall_event():
     for i in range(len(frame2_3_check_btn_list)):
         globals()["f2_in_f3_btn"+str(i)].select()
 
 def f2_f3_dselectall_event():
     for i in range(len(frame2_3_check_btn_list)):
-        globals()["f2_in_f3_btn"+str(i)].deselect()  
-        
+        globals()["f2_in_f3_btn"+str(i)].deselect()
+
 def f3_f1_selectall_event():
     for i in range(len(frame3_1_check_btn_list)):
         globals()["f3_in_f1_btn"+str(i)].select()
@@ -594,7 +594,7 @@ def samplepath_event():
     samplepath_text.delete(1.0,"end")
     samplepath_text.insert(1.0, filename)
     samplepath_text.config(state="disable")
-    
+
 def downloadpath_event():
     filename = filedialog.askdirectory(parent=window)
     if not filename:
@@ -614,14 +614,14 @@ def downloadpath2_event():
     bulkdownloadpath_text.insert(1.0, filename)
     bulkdownloadpath_text.config(state="disable")
     write_pathconfig(type="bulk",download_path=filename)
-    
+
 def stocklistpath_event():
     filename = filedialog.askopenfilename(parent=window,initialdir="C:/",filetypes = (("excel files","*.xlsx"),("all files","*.*")))
     stocklistpath_text.config(state="normal")
     stocklistpath_text.delete(1.0,"end")
     stocklistpath_text.insert(1.0, filename)
     stocklistpath_text.config(state="disable")
-    
+
 # 批量建立tkinter變數
 def f1_var_name():
     for i in range(len(f1_1_var_namelist)):
@@ -630,7 +630,7 @@ def f1_var_name():
         globals()["f1_in_f2_va"+str(i)] = tk.StringVar()
     for i in range(len(f1_3_var_namelist)):
         globals()["f1_in_f3_va"+str(i)] = tk.StringVar()
-        
+
 def f2_var_name():
     for i in range(len(f2_1_var_namelist)):
         globals()["f2_in_f1_va"+str(i)] = tk.StringVar()
@@ -642,7 +642,7 @@ def f2_var_name():
 def f3_var_name():
     for i in range(len(f3_1_var_namelist)):
         globals()["f3_in_f1_va"+str(i)] = tk.StringVar()
-        
+
 # 批量建立損益表複選按鈕
 def frame1_check_btn():
     key1_list = ["收入","其他收入合計","銷售/一般/管理費用合計","研發","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額"]
@@ -780,7 +780,7 @@ def frame2_check_btn():
         elif copy_frame2_2_list[0] in key2_2_list:
             globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=copy_frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
                                                               width=100,bg="white",fg="green",anchor="w",onvalue=copy_frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])      
+            frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
         else:
             globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=copy_frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
                                                               width=100,bg="white",anchor="w",onvalue=copy_frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
@@ -813,8 +813,6 @@ def frame3_check_btn():
                  "股票發行（贖回）淨額","債務發行（贖回）淨額"]
     copy_frame3_list = frame3_1_inside_text_list
     opt1=tk.IntVar()
-    # opt2=tk.IntVar()
-    # opt3=tk.IntVar()
     frame3_inside_1_sall_rbtn = tk.Radiobutton(frame3_inside_1_text, variable=opt1,value=1,text="全選",
                                                command=f3_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
     frame3_inside_1_dall_rbtn = tk.Radiobutton(frame3_inside_1_text, variable=opt1,value=2,text="取消全選",
@@ -838,7 +836,7 @@ def frame3_check_btn():
 
 # 自適應視窗中心
 align_center(window,1000,700)
-window.update_idletasks() 
+window.update_idletasks()
 
 """instance compoments"""
 country_lb = tk.Label(window,text="股票代號/國家： ",font=("新細明體",12),anchor="e")
@@ -879,7 +877,7 @@ stext.config(state="disabled",font=("新細明體",13))
 stext.place(relx=0.01,rely=0.4,relwidth=0.49,relheight=0.2)
 
 window_spea = ttk.Separator(window,orient="horizontal")
-window_spea.place(relx=0,rely=0.62,relwidth=1)                                  
+window_spea.place(relx=0,rely=0.62,relwidth=1)
 
 samplepath_lb = tk.Label(window,text="合併範例檔案： ",font=("新細明體",12),anchor="e")
 samplepath_lb.place(relx=0.01,rely=0.635,relwidth=0.15)
@@ -945,7 +943,7 @@ progress.place(relx=0.53,rely=0.94,relwidth=0.43)
 
 # window notebook&frame
 notebook = ttk.Notebook(window)
-notebook.place(relx=0.5,rely=0,relwidth=0.5,relheight=0.6)          
+notebook.place(relx=0.5,rely=0,relwidth=0.5,relheight=0.6)
 frame_1 = tk.Frame(notebook)
 frame_2 = tk.Frame(notebook)
 frame_3 = tk.Frame(notebook)
@@ -956,68 +954,68 @@ notebook.add(frame_2,text="資產負債表",padding=10)
 notebook.add(frame_3,text="現金流",padding=10)
 
 # frame1 configure
-frame_1_notebook = ttk.Notebook(frame_1)                                        
-frame_1_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)                   
-frame1_inside_1 = tk.Frame(frame_1_notebook)                                    
-frame1_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)                    
-frame1_inside_1_scollbar = tk.Scrollbar(frame1_inside_1)                       
-frame1_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame1_inside_1_text = tk.Text(frame1_inside_1)                                
-frame1_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame_1_notebook = ttk.Notebook(frame_1)
+frame_1_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
+frame1_inside_1 = tk.Frame(frame_1_notebook)
+frame1_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)
+frame1_inside_1_scollbar = tk.Scrollbar(frame1_inside_1)
+frame1_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame1_inside_1_text = tk.Text(frame1_inside_1)
+frame1_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame1_inside_1_text.configure(state="disabled")
 frame1_inside_1_scollbar.config(command=frame1_inside_1_text.yview)
 frame1_inside_1_text.config(yscrollcommand=frame1_inside_1_scollbar.set)
 frame1_inside_2 = tk.Frame(frame_1_notebook)
 frame1_inside_2.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame1_inside_2_scollbar = tk.Scrollbar(frame1_inside_2)                        
-frame1_inside_2_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame1_inside_2_text = tk.Text(frame1_inside_2)                                 
-frame1_inside_2_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame1_inside_2_scollbar = tk.Scrollbar(frame1_inside_2)
+frame1_inside_2_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame1_inside_2_text = tk.Text(frame1_inside_2)
+frame1_inside_2_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame1_inside_2_text.configure(state="disabled")
 frame1_inside_2_scollbar.config(command=frame1_inside_2_text.yview)
 frame1_inside_2_text.config(yscrollcommand=frame1_inside_2_scollbar.set)
 frame1_inside_3 = tk.Frame(frame_1_notebook)
 frame1_inside_3.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame1_inside_3_scollbar = tk.Scrollbar(frame1_inside_3)                        
-frame1_inside_3_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame1_inside_3_text = tk.Text(frame1_inside_3)                                 
-frame1_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame1_inside_3_scollbar = tk.Scrollbar(frame1_inside_3)
+frame1_inside_3_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame1_inside_3_text = tk.Text(frame1_inside_3)
+frame1_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame1_inside_3_text.configure(state="disabled")
 frame1_inside_3_scollbar.config(command=frame1_inside_3_text.yview)
 frame1_inside_3_text.config(yscrollcommand=frame1_inside_3_scollbar.set)
 f1_var_name()
 frame1_inside_1_sall_rbtn,frame1_inside_2_sall_rbtn,frame1_inside_3_sall_rbtn = frame1_check_btn()
-frame_1_notebook.add(frame1_inside_1,text="一般類別")                              
-frame_1_notebook.add(frame1_inside_2,text="保險類別")     
-frame_1_notebook.add(frame1_inside_3,text="銀行類別")                    
+frame_1_notebook.add(frame1_inside_1,text="一般類別")
+frame_1_notebook.add(frame1_inside_2,text="保險類別")
+frame_1_notebook.add(frame1_inside_3,text="銀行類別")
 
 # frame2 configure
 frame_2_notebook = ttk.Notebook(frame_2)
-frame_2_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)       
+frame_2_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
 frame2_inside_1 = tk.Frame(frame_2_notebook)
-frame2_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1) 
-frame2_inside_1_scollbar = tk.Scrollbar(frame2_inside_1)                        
-frame2_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame2_inside_1_text = tk.Text(frame2_inside_1)                                 
-frame2_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame2_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)
+frame2_inside_1_scollbar = tk.Scrollbar(frame2_inside_1)
+frame2_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame2_inside_1_text = tk.Text(frame2_inside_1)
+frame2_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame2_inside_1_text.configure(state="disabled")
 frame2_inside_1_scollbar.config(command=frame2_inside_1_text.yview)
 frame2_inside_1_text.config(yscrollcommand=frame2_inside_1_scollbar.set)
 frame2_inside_2 = tk.Frame(frame_2_notebook)
 frame2_inside_2.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame2_inside_2_scollbar = tk.Scrollbar(frame2_inside_2)                        
-frame2_inside_2_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame2_inside_2_text = tk.Text(frame2_inside_2)                                 
-frame2_inside_2_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame2_inside_2_scollbar = tk.Scrollbar(frame2_inside_2)
+frame2_inside_2_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame2_inside_2_text = tk.Text(frame2_inside_2)
+frame2_inside_2_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame2_inside_2_text.configure(state="disabled")
 frame2_inside_2_scollbar.config(command=frame2_inside_2_text.yview)
 frame2_inside_2_text.config(yscrollcommand=frame2_inside_2_scollbar.set)
 frame2_inside_3 = tk.Frame(frame_2_notebook)
 frame2_inside_3.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame2_inside_3_scollbar = tk.Scrollbar(frame2_inside_3)                        
-frame2_inside_3_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame2_inside_3_text = tk.Text(frame2_inside_3)                                 
-frame2_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame2_inside_3_scollbar = tk.Scrollbar(frame2_inside_3)
+frame2_inside_3_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame2_inside_3_text = tk.Text(frame2_inside_3)
+frame2_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame2_inside_3_text.configure(state="disabled")
 frame2_inside_3_scollbar.config(command=frame2_inside_3_text.yview)
 frame2_inside_3_text.config(yscrollcommand=frame2_inside_3_scollbar.set)
@@ -1025,20 +1023,20 @@ f2_var_name()
 frame2_inside_1_sall_rbtn,frame2_inside_2_sall_rbtn,frame2_inside_3_sall_rbtn = frame2_check_btn()
 frame_2_notebook.add(frame2_inside_1,text="一般類別")
 frame_2_notebook.add(frame2_inside_2,text="保險類別")
-frame_2_notebook.add(frame2_inside_3,text="銀行類別")  
+frame_2_notebook.add(frame2_inside_3,text="銀行類別")
 
 # frame3 configure
 frame_3_notebook = ttk.Notebook(frame_3)
-frame_3_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)   
+frame_3_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
 frame3_inside_1 = tk.Frame(frame_3_notebook)
-frame3_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1) 
-frame3_inside_1_scollbar = tk.Scrollbar(frame3_inside_1)                        
-frame3_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)             
-frame3_inside_1_text = tk.Text(frame3_inside_1)                                 
-frame3_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)             
+frame3_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)
+frame3_inside_1_scollbar = tk.Scrollbar(frame3_inside_1)
+frame3_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
+frame3_inside_1_text = tk.Text(frame3_inside_1)
+frame3_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame3_inside_1_text.configure(state="disabled")
 frame3_inside_1_scollbar.config(command=frame3_inside_1_text.yview)
-frame3_inside_1_text.config(yscrollcommand=frame3_inside_1_scollbar.set)     
+frame3_inside_1_text.config(yscrollcommand=frame3_inside_1_scollbar.set)
 f3_var_name()
 frame3_inside_1_sall_rbtn = frame3_check_btn()
 frame_3_notebook.add(frame3_inside_1,text="一般類別")
@@ -1085,7 +1083,7 @@ for i in range(len(frame3_1_check_btn_list)):
     if f3config[i]:
         globals()["f3_in_f1_btn"+str(i)].select()
     else:
-        globals()["f3_in_f1_btn"+str(i)].deselect()        
+        globals()["f3_in_f1_btn"+str(i)].deselect()
 
 """default radiobox select"""
 frame1_inside_1_sall_rbtn.select()
@@ -1106,10 +1104,6 @@ bulkdownloadpath_text.config(state="normal")
 bulkdownloadpath_text.delete(1.0,"end")
 bulkdownloadpath_text.insert(1.0, bulk)
 bulkdownloadpath_text.config(state="disable")
-
-# window.update()
-# wd,hi = notebook.winfo_width(), notebook.winfo_height()
-# print(wd,hi)
 
 if __name__ == '__main__':
     window.mainloop()
