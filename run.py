@@ -38,7 +38,7 @@ tmp.close()
 window = tk.Tk()
 # gui favicon
 window.iconbitmap("tmp.ico")
-window.title('investing_v2.1')
+window.title('investing_v2.3')
 window.resizable(False,False)
 # gui theme
 windw_style = ttk.Style(window)
