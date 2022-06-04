@@ -15,15 +15,19 @@ import pandas as pd
 import requests
 import random
 
-user_agent = UserAgent()
-headers = {'User-Agent': user_agent.random}
+""" 爬蟲功能 """
 
+get_headers = {'User-Agent': UserAgent().random}
+
+post_headers = {"User-Agent": UserAgent().random,
+                "x-requested-with": "XMLHttpRequest"}
 
 def ransleep():
+    """ 隨機等待秒數 """
     sleep(random.randint(1, 2))
 
-
 def autowidth(ws):
+    """ 自適應欄位寬度 """
     lks = []
     for i in range(1, ws.max_column+1):
         lk = 1
@@ -40,8 +44,8 @@ def autowidth(ws):
         k = get_column_letter(i)
         ws.column_dimensions[k].width = lks[i-1]+2
 
-
 def styled_cells(data, ws, key1_list, key2_list=[""], key3_list=[""]):
+    """ 表格偏好設定 """
     font1 = Font(color="0066CC")
     font2 = Font(color="006030")
     font3 = Font(bold=True)
@@ -60,7 +64,6 @@ def styled_cells(data, ws, key1_list, key2_list=[""], key3_list=[""]):
                 value = Cell(ws, column="A", row=1, value=i)
         yield i
 
-
 def ws1_write_column(ws):
     ws1_column_list = ["收盤價", "全日波幅", "營業額", "開市", "52週波幅", "EPS", "成交量", "市值",
                        "股息(紅利)", "平均成交量(3個月)", "市盈率", "Beta", "1年生跌率", "已發行股票",
@@ -69,13 +72,11 @@ def ws1_write_column(ws):
         ws.cell(row=i+1, column=1, value=ws1_column_list[0])
         ws1_column_list.pop(0)
 
-
 def ws2_write_column(ws):
     ws2_column_list = ["年度", "最高", "最低"]
     for i in range(3):
         ws.cell(row=i+1, column=1, value=ws2_column_list[0])
         ws2_column_list.pop(0)
-
 
 def ws3to4_write_column(ws1, ws2):
     ws3_column_list_1 = ["毛利率TTM", "經營利潤率TTM", "淨利率TTM", "投資回報率TTM"]
@@ -94,13 +95,11 @@ def ws3to4_write_column(ws1, ws2):
         ws2.cell(row=5, column=i+1, value=ws3_column_list_3[0])
         ws3_column_list_3.pop(0)
 
-
 def ws11_write_column(ws):
     ws11_column_list = ["名稱", "公司", "產業"]
     ws.cell(row=1, column=1, value=ws11_column_list[0])
     ws.cell(row=1, column=2, value=ws11_column_list[1])
     ws.cell(row=1, column=3, value=ws11_column_list[2])
-
 
 def ws12_write_column(ws):
     ws12_column_list = ["除息日", "股息", "種類", "付息日", "孳息率"]
@@ -110,7 +109,6 @@ def ws12_write_column(ws):
     ws.cell(row=1, column=4, value=ws12_column_list[3])
     ws.cell(row=1, column=5, value=ws12_column_list[4])
 
-
 def ws13_write_column(ws):
     ws13_column_list = ["公佈日期", "截止", "EPS/預測", "營業額/預測"]
     ws.cell(row=1, column=1, value=ws13_column_list[0])
@@ -118,13 +116,10 @@ def ws13_write_column(ws):
     ws.cell(row=1, column=3, value=ws13_column_list[2])
     ws.cell(row=1, column=4, value=ws13_column_list[3])
 
-
-"""抓取國家名稱&代碼清單"""
-
-
 def get_country_dict():
+    """ 抓取國家名稱&代碼清單 """
     basic_url = "https://hk.investing.com/stock-screener/?sp=country::39|sector::a|industry::a|equityType::a%3Ceq_market_cap;1"
-    res = requests.get(basic_url, headers=headers)
+    res = requests.get(url=basic_url, headers=get_headers)
     res.encoding = "UTF-8"
     country_xml = BeautifulSoup(res.text, "lxml").find(
         id="countriesUL").find_all("li")
@@ -134,15 +129,12 @@ def get_country_dict():
             " ", "")] = i["data-value"]
     return country_dict
 
-
-"""抓取市場名稱&代碼清單"""
-
-
 def get_exchang_dict(country_dict):
+    """ 抓取市場名稱&代碼清單 """
     exchange_category_dict = {}
     for j, k in country_dict.items():
         exchange_url = f"https://hk.investing.com/stock-screener/?sp=country::{k}|sector::a|industry::a|equityType::a%3Ceq_market_cap;1"
-        exchange_res = requests.get(exchange_url, headers=headers)
+        exchange_res = requests.get(url=exchange_url, headers=get_headers)
         exchange_res.encoding = "UTF-8"
         exchange_xml = BeautifulSoup(exchange_res.text, "html.parser").find(
             id="exchangesUL").find_all("li")
@@ -152,11 +144,8 @@ def get_exchang_dict(country_dict):
             exchange_category_dict[exchange_name] = exchange_code
         return exchange_category_dict
 
-
-"""抓取股票清單"""
-
-
 def get_stock_list(**kwargs):
+    """ 抓取股票清單 """
     start = perf_counter()
     wb = Workbook()
     ws = wb.active
@@ -168,10 +157,10 @@ def get_stock_list(**kwargs):
     progress = kwargs["progress"]
     stock_data = {"country[]": country, "exchange[]": exchange,
                   "sector": category, "order[col]": "eq_market_cap", "order[dir]": "d"}
-    headers = {"User-Agent": user_agent.random, "x-requested-with": "XMLHttpRequest",
+    headers = {"User-Agent": UserAgent().random, "x-requested-with": "XMLHttpRequest",
                "referer": f"https://hk.investing.com/stock-screener/?sp=country::{country}|sector::{category}|industry::a|equityType::a|exchange::{exchange}%3Ceq_market_cap;1"}
     basic_url = "https://hk.investing.com/stock-screener/Service/SearchStocks"
-    res = requests.post(basic_url, headers=headers, data=stock_data)
+    res = requests.post(url=basic_url, headers=headers, data=stock_data)
     res.encoding = "UTF-8"
     res = res.json()
     stock_totalcount = res["totalCount"]
@@ -215,11 +204,8 @@ def get_stock_list(**kwargs):
         print(f"Cost: {perf_counter() - start}")
     return stock_totalcount
 
-
-"""讀取複選框設定"""
-
-
 def get_checkboxconfig():
+    """ 讀取複選框設定 """
     tempfile = Path.cwd() / "temp.xlsx"
     wb = load_workbook(tempfile)
     ws = wb.active
@@ -235,11 +221,8 @@ def get_checkboxconfig():
     wb.close()
     return f1_1config, f1_2config, f1_3config, f2_1config, f2_2config, f2_3config, f3config
 
-
-"""讀取日期設定"""
-
-
 def get_dateconfig():
+    """ 讀取日期設定 """
     f1_1list = ["總收入", "收入", "其他收入合計", "稅收成本合計", "毛利", "經營開支總額", "銷售/一般/管理費用合計",
                 "研發", "折舊/攤銷", "利息開支(收入)-營運淨額", "例外開支(收入)", "其他運營開支總額", "營業收入",
                 "利息收入（開支）- 非營運淨額", "出售資產收入（虧損）", "其他，淨額", "稅前淨收益", "備付所得稅",
@@ -332,11 +315,8 @@ def get_dateconfig():
     day = int(date_[date_.rfind("/")+1:])
     return year, month, day
 
-
-"""寫入日期設定"""
-
-
 def write_dateconfig(st_date):
+    """ 寫入日期設定 """
     tempfile = Path.cwd() / "temp.xlsx"
     st_date = str(st_date).replace("-", "/")
     wb = load_workbook(tempfile)
@@ -344,11 +324,8 @@ def write_dateconfig(st_date):
     ws.cell(row=1, column=2, value=st_date)
     wb.save(tempfile)
 
-
-"""讀取下載路徑設定"""
-
-
 def get_pathconfig():
+    """ 讀取下載路徑設定 """
     tempfile = Path.cwd() / "temp.xlsx"
     wb = load_workbook(tempfile)
     ws = wb.active
@@ -356,11 +333,8 @@ def get_pathconfig():
     bulk = ws.cell(row=254, column=2).value
     return single, bulk
 
-
-"""寫入下載路徑設定"""
-
-
 def write_pathconfig(type, download_path):
+    """ 寫入下載路徑設定 """
     tempfile = Path.cwd() / "temp.xlsx"
     wb = load_workbook(tempfile)
     ws = wb.active
@@ -370,11 +344,8 @@ def write_pathconfig(type, download_path):
         ws.cell(row=254, column=2, value=download_path)
     wb.save(tempfile)
 
-
-"""讀取個股清單"""
-
-
 def read_stock_list(stockpath):
+    """ 讀取個股清單 """
     wb = load_workbook(stockpath)
     ws = wb.active
     try:
@@ -391,13 +362,9 @@ def read_stock_list(stockpath):
         last_index = 0
         return last_index
 
-
-"""抓取綜觀"""
-# https://hk.investing.com/equities/william-demant
-
-
 def get_stock_inventory(url, ws):
-    res = requests.get(url, headers=headers)
+    """ 抓取綜觀 https://hk.investing.com/equities/william-demant """
+    res = requests.get(url, headers=get_headers)
     res.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml")
     h1parser = xml.find("h1").get_text()
@@ -493,22 +460,18 @@ def get_stock_inventory(url, ws):
         ws1_column_list.pop(0)
     return stockpair
 
-
-"""抓取簡介"""
-# "https://hk.investing.com/equities/william-demant-profile"
-
-
 def get_stock_profile(url,ws):
+    """ 抓取簡介 https://hk.investing.com/equities/william-demant-profile """
     if "?cid=" in url:
         f_index = url.find("?cid=")
         l_index = url[f_index:]
         url = url[:f_index]+"-company-profile"+l_index
-        res = requests.get(url, headers=headers)
+        res = requests.get(url=url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
     else:
         url = url+"-company-profile"
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
     try:
@@ -535,28 +498,20 @@ def get_stock_profile(url,ws):
     ws.cell(row=18, column=2, value=category)
     ws.cell(row=19, column=2, value=stocktype)
 
-
-"""抓取歷史數據"""
-# "https://hk.investing.com/instruments/HistoricalDataAjax"
-
-
 def get_stock_history(pair_id, start_date, end_date, ws):
+    """ 抓取歷史價格 https://hk.investing.com/instruments/HistoricalDataAjax """
     if start_date == end_date:
         yearindex = str(int(start_date[:4])-4)
         start_date = yearindex+start_date[4:]
     url = "https://hk.investing.com/instruments/HistoricalDataAjax"
-    headers = {"User-Agent": user_agent.random,
-               "x-requested-with": "XMLHttpRequest"}
     stock_data = {"curr_id": pair_id, "action": "historical_data", "interval_sec": "Monthly",
                   "sort_ord": "DESC", "st_date": start_date, "end_date": end_date}
-    res = requests.post(url, headers=headers, data=stock_data)
+    res = requests.post(url, headers=post_headers, data=stock_data)
     res.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml").find(id="curr_table")
     df = pd.read_html(str(xml))[0]
     from_year = start_date[0:4]
-    # from_month = int(start_date[start_date.find("/")+1:start_date.rfind("/")])
     end_year = end_date[0:4]
-    # end_month = int(end_date[end_date.find("/")+1:end_date.rfind("/")])
     count_year = (int(end_year) - int(from_year)) + 1
     end_year_n = int(end_year) + 1
     df["日期"] = df["日期"].str[0:4]
@@ -590,22 +545,16 @@ def get_stock_history(pair_id, start_date, end_date, ws):
             ws.cell(row=3, column=i+2, value=min_list[0])
             min_list.pop(0)
 
-
-"""抓取財務摘要"""
-# https://hk.investing.com/instruments/Financials/changesummaryreporttypeajax
-
-
 def get_stock_financials(pair_id, ws1, ws2):
+    """ 抓取財務摘要 https://hk.investing.com/instruments/HistoricalDataAjax """
     url = "https://hk.investing.com/instruments/Financials/changesummaryreporttypeajax"
-    headers = {"User-Agent": user_agent.random,
-               "x-requested-with": "XMLHttpRequest"}
     stock_data_annual = {"pid": pair_id, "action": "change_report_type",
                          "financial_id": pair_id, "ratios_id": pair_id, "period_type": "Interim"}
     stock_data_interim = {"pid": pair_id, "action": "change_report_type",
                           "financial_id": pair_id, "ratios_id": pair_id, "period_type": "Annual"}
-    res = requests.post(url, headers=headers, data=stock_data_annual)
+    res = requests.post(url, headers=post_headers, data=stock_data_annual)
     sleep(0.5)
-    res2 = requests.post(url, headers=headers, data=stock_data_interim)
+    res2 = requests.post(url, headers=post_headers, data=stock_data_interim)
     res.encoding = "UTF-8"
     res2.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml")
@@ -700,30 +649,24 @@ def get_stock_financials(pair_id, ws1, ws2):
         if len(r) > 1:
             ws2.append(r)
 
-
-"""抓取損益表"""
-# https://hk.investing.com/instruments/Financials/changereporttypeajax
-
-
 def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws2):
+    """ 抓取損益表 https://hk.investing.com/instruments/Financials/changereporttypeajax """
     profit1_list = choose1_list
     profit2_list = choose2_list
     profit3_list = choose3_list
-    general_list = ["收入", "其他收入合計", "銷售/一般/管理費用合計", "研發",
-                    "折舊/攤銷", "利息開支（收入）- 營運淨額", "例外開支（收入）", "其他運營開支總額"]
-    finance1_list = ["保費收入合計", "投資收益淨額", "變現收益（虧損）", "其他收入合計", "虧損、福利和修訂合計", "购置成本攤銷",
-                     "銷售/一般/管理費用合計", "折舊/攤銷", "利息開支（收入）- 營運淨額", "例外開支（收入）", "其他運營開支總額"]
-    finance2_list = ["銀行利息收入", "利息開支總額"]
+    PROFITLOSS_GENERAL_LIST = [ "收入", "其他收入合計", "銷售/一般/管理費用合計", "研發",
+                               "折舊/攤銷", "利息開支（收入）- 營運淨額", "例外開支（收入）", "其他運營開支總額" ]
+    PROFITLOSS_FINANCE_1_LIST = [ "保費收入合計", "投資收益淨額", "變現收益（虧損）", "其他收入合計", "虧損、福利和修訂合計", "购置成本攤銷",
+                                 "銷售/一般/管理費用合計", "折舊/攤銷", "利息開支（收入）- 營運淨額", "例外開支（收入）", "其他運營開支總額" ]
+    PROFITLOSS_FINANCE_2_LIST = [ "銀行利息收入", "利息開支總額" ]
     url = "https://hk.investing.com/instruments/Financials/changereporttypeajax"
-    headers = {"User-Agent": user_agent.random,
-               "x-requested-with": "XMLHttpRequest"}
     stock_data_annual = {"pair_ID": pair_id, "action": "change_report_type",
                          "report_type": "INC", "period_type": "Interim"}
     stock_data_interim = {"pair_ID": pair_id, "action": "change_report_type",
                           "report_type": "INC", "period_type": "Annual"}
-    res = requests.post(url, headers=headers, data=stock_data_annual)
+    res = requests.post(url, headers=post_headers, data=stock_data_annual)
     sleep(0.5)
-    res2 = requests.post(url, headers=headers, data=stock_data_interim)
+    res2 = requests.post(url, headers=post_headers, data=stock_data_interim)
     res.encoding = "UTF-8"
     res2.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml")
@@ -733,21 +676,17 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
         df1 = pd.read_html(str(xml))[0]
     except ParserError as f:
         df1 = pd.DataFrame()
-        profitloss = 0
         error = "季報表，"+str(f)
     except Exception as e:
         df1 = pd.DataFrame()
-        profitloss = 0
         error = "季報表，"+e
     try:
         df2 = pd.read_html(str(xml2))[0]
     except ParserError as f:
         df1 = pd.DataFrame()
-        profitloss = 0
         error = "年報表，"+str(f)
     except Exception as e:
         df2 = pd.DataFrame()
-        profitloss = 0
         error = "年報表，"+e
     if not df1.empty and not df2.empty:
         if len(df1.index) == 36:
@@ -805,11 +744,10 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
                 frame2_to_rows.pop(0)
             for i in final1_rows:
                 ws1.append(styled_cells(
-                    data=i, key1_list=general_list, key3_list=bold_list, ws=ws1))
+                    data=i, key1_list=PROFITLOSS_GENERAL_LIST, key3_list=bold_list, ws=ws1))
             for i in final2_rows:
                 ws2.append(styled_cells(
-                    data=i, key1_list=general_list, key3_list=bold_list, ws=ws2))
-            profitloss = 0
+                    data=i, key1_list=PROFITLOSS_GENERAL_LIST, key3_list=bold_list, ws=ws2))
             error = 0
             savetype = "一般"
         elif len(df1.index) == 37:
@@ -867,11 +805,10 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
                 frame2_to_rows.pop(0)
             for i in final1_rows:
                 ws1.append(styled_cells(
-                    data=i, key1_list=finance1_list, key3_list=bold_list, ws=ws1))
+                    data=i, key1_list=PROFITLOSS_FINANCE_1_LIST, key3_list=bold_list, ws=ws1))
             for i in final2_rows:
                 ws2.append(styled_cells(
-                    data=i, key1_list=finance1_list, key3_list=bold_list, ws=ws2))
-            profitloss = 0
+                    data=i, key1_list=PROFITLOSS_FINANCE_1_LIST, key3_list=bold_list, ws=ws2))
             error = 0
             savetype = "保險"
         elif len(df1.index) == 26:
@@ -927,108 +864,49 @@ def get_profitandloss(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
                 frame2_to_rows.pop(0)
             for i in final1_rows:
                 ws1.append(styled_cells(
-                    data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws1))
+                    data=i, key1_list=PROFITLOSS_FINANCE_2_LIST, key3_list=bold_list, ws=ws1))
             for i in final2_rows:
                 ws2.append(styled_cells(
-                    data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws2))
-            profitloss = 0
+                    data=i, key1_list=PROFITLOSS_FINANCE_2_LIST, key3_list=bold_list, ws=ws2))
             error = 0
             savetype = "銀行"
         else:
             error = "df行數" + str(len(df1.index))
-            profitloss = 1
-            # try:
-            #     frame1_to_rows = list(dataframe_to_rows(
-            #         df1, index=False, header=False))
-            #     end_date = frame1_to_rows[-1]
-            #     clean_end_date = []
-            #     for date in end_date:
-            #         if str(date) != "nan":
-            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
-            #             clean_end_date.append(date_string)
-            #         if str(date) == "nan":
-            #             clean_end_date.append("")
-            #     clean_end_date[0] = "結束日期："
-            #     frame1_to_rows.pop(1)
-            #     frame1_to_rows.pop(-1)
-            #     frame1_to_rows.insert(0, clean_end_date)
-            #     frame2_to_rows = list(dataframe_to_rows(
-            #         df2, index=False, header=False))
-            #     end_date = frame2_to_rows[-1]
-            #     clean_end2_date = []
-            #     for date in end2_date:
-            #         if str(date) != "nan":
-            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
-            #             clean_end2_date.append(date_string)
-            #         if str(date) == "nan":
-            #             clean_end2_date.append("")
-            #     clean_end2_date[0] = "結束日期："
-            #     frame2_to_rows.pop(1)
-            #     frame2_to_rows.pop(-1)
-            #     frame2_to_rows.insert(0, clean_end2_date)
-            #     for i in frame1_to_rows:
-            #         for index, value in enumerate(i):
-            #             if i[index] == "-":
-            #                 i[index] = ""
-            #     for i in frame2_to_rows:
-            #         for index, value in enumerate(i):
-            #             if i[index] == "-":
-            #                 i[index] = ""
-            #     for i in final1_rows:
-            #         ws1.append(styled_cells(
-            #             data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws1))
-            #     for i in final2_rows:
-            #         ws2.append(styled_cells(
-            #             data=i, key1_list=finance2_list, key3_list=bold_list, ws=ws2))
-            #     profitloss = 1
-            #     error = 0
-            # except Exception as e:
-            #     frame1_to_rows = []
-            #     frame2_to_rows = []
-            #     profitloss = 1
-            #     error = e
-            #     savetype = "其它"
-    return int(profitloss), error, savetype
-
-
-"""抓取資產負債表"""
-# https://hk.investing.com/instruments/Financials/changereporttypeajax
-
+    return error, savetype
 
 def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws2):
+    """ 抓取資產負債表 https://hk.investing.com/instruments/Financials/changereporttypeajax """
     balance1_list = choose1_list
     balance2_list = choose2_list
     balance3_list = choose3_list
-    general1_1_list = ["現金和短期投資", "淨應收款合計", "庫存合計", "預付費用", "其他流動資產合計",
-                       "物業/廠房/設備淨總額", "商譽淨額", "無形資產淨額", "長期投資",
-                       "長期應收票據", "其他長期資產合計", "其他資產合計", "應付賬款",
-                       "應付/應計", "應計費用", "應付票據/短期債務", "長期負債當前應收部分/資本租賃",
-                       "其他流動負債合計", "長期債務合計", "遞延所得稅", "少數股東權益", "其他負債合計",
-                       "可贖回優先股合計", "不可贖回優先股淨額", "普通股合計", "附加資本", "保留盈餘(累計虧損)",
-                       "普通庫存股", "員工持股計劃債務擔保", "未實現收益（虧損）", "其他權益合計"]
-    general1_2_list = ["現金", "現金和現金等價物", "短期投資", "淨交易應收款合計",
-                       "物業/廠房/設備總額", "累計折舊合計", "長期債務", "資本租賃債務"]
-    finance1_1_list = ["現金", "現金和現金等價物", "淨應收款合計", "預付費用", "物業/廠房/設備淨總額", "商譽淨額", "無形資產淨額", "長期投資",
+    BALANCE_GENERAL_1_1_LIST = [ "現金和短期投資", "淨應收款合計", "庫存合計", "預付費用", "其他流動資產合計",
+                                "物業/廠房/設備淨總額", "商譽淨額", "無形資產淨額", "長期投資",
+                                "長期應收票據", "其他長期資產合計", "其他資產合計", "應付賬款",
+                                "應付/應計", "應計費用", "應付票據/短期債務", "長期負債當前應收部分/資本租賃",
+                                "其他流動負債合計", "長期債務合計", "遞延所得稅", "少數股東權益", "其他負債合計",
+                                "可贖回優先股合計", "不可贖回優先股淨額", "普通股合計", "附加資本", "保留盈餘(累計虧損)",
+                                "普通庫存股", "員工持股計劃債務擔保", "未實現收益（虧損）", "其他權益合計" ]
+    BALANCE_GENERAL_1_2_LIST = [ "現金", "現金和現金等價物", "短期投資", "淨交易應收款合計",
+                                "物業/廠房/設備總額", "累計折舊合計", "長期債務", "資本租賃債務" ]
+    BALANCE_FINANCE_1_1_LIST = [ "現金", "現金和現金等價物", "淨應收款合計", "預付費用", "物業/廠房/設備淨總額", "商譽淨額", "無形資產淨額", "長期投資",
                        "應收保險", "長期應收票據", "其他長期資產合計", "遞延保單獲得成本", "其他資產合計", "應付賬款", "應付/應計", "應計費用",
                        "保單負債", "應付票據/短期債務", "長期負債當前應收部分/資本租賃", "其他流動負債合計", "長期債務合計", "遞延所得稅",
                        "少數股東權益", "其他負債合計", "可贖回優先股合計", "不可贖回優先股淨額", "普通股合計", "附加資本", "保留盈餘(累計虧損)",
-                       "普通庫存股", "員工持股計劃債務擔保", "未實現收益（虧損）", "其他權益合計"]
-    finance1_2_list = ["物業/廠房/設備總額", "累計折舊合計", "長期債務", "資本租賃債務"]
-    finance2_1_list = ["銀行應付現金和欠款", "其他盈利資產合計", "淨貸款", "物業/廠房/設備淨總額", "商譽淨額", "無形資產淨額", "長期投資", "其他長期資產合計",
-                       "其他資產合計", "應付賬款", "應付/應計", "應計費用", "存款總額", "其他付息負債合計", "短期借貸總額", "長期負債當前應收部分/資本租賃",
-                       "其他流動負債合計", "長期債務合計", "遞延所得稅", "少數股東權益", "其他負債合計", "可贖回優先股合計", "不可贖回優先股淨額", "普通股合計",
-                       "附加資本", "保留盈餘(累計虧損)", "普通庫存股", "員工持股計劃債務擔保", "未實現收益（虧損）", "其他權益合計"]
-    finance2_2_list = ["物業/廠房/設備總額", "累計折舊合計", "長期債務", "資本租賃債務"]
+                       "普通庫存股", "員工持股計劃債務擔保", "未實現收益（虧損）", "其他權益合計" ]
+    BALANCE_FINANCE_1_2_LIST = [ "物業/廠房/設備總額", "累計折舊合計", "長期債務", "資本租賃債務" ]
+    BALANCE_FINANCE_2_1_LIST = [ "銀行應付現金和欠款", "其他盈利資產合計", "淨貸款", "物業/廠房/設備淨總額", "商譽淨額", "無形資產淨額", "長期投資", "其他長期資產合計",
+                                "其他資產合計", "應付賬款", "應付/應計", "應計費用", "存款總額", "其他付息負債合計", "短期借貸總額", "長期負債當前應收部分/資本租賃",
+                                "其他流動負債合計", "長期債務合計", "遞延所得稅", "少數股東權益", "其他負債合計", "可贖回優先股合計", "不可贖回優先股淨額", "普通股合計",
+                                "附加資本", "保留盈餘(累計虧損)", "普通庫存股", "員工持股計劃債務擔保", "未實現收益（虧損）", "其他權益合計" ]
+    BALANCE_FINANCE_2_2_LIST = [ "物業/廠房/設備總額", "累計折舊合計", "長期債務", "資本租賃債務" ]
     url = "https://hk.investing.com/instruments/Financials/changereporttypeajax"
-    headers = {"User-Agent": user_agent.random,
-               "x-requested-with": "XMLHttpRequest"}
     stock_data_annual = {"pair_ID": pair_id, "action": "change_report_type",
                          "report_type": "BAL", "period_type": "Interim"}
     stock_data_interim = {"pair_ID": pair_id, "action": "change_report_type",
                           "report_type": "BAL", "period_type": "Annual"}
-    res = requests.post(url, headers=headers, data=stock_data_annual)
+    res = requests.post(url, headers=post_headers, data=stock_data_annual)
     sleep(0.5)
-    res2 = requests.post(url, headers=headers, data=stock_data_interim)
+    res2 = requests.post(url, headers=post_headers, data=stock_data_interim)
     res.encoding = "UTF-8"
     res2.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml")
@@ -1037,13 +915,11 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
         df1 = pd.read_html(str(xml))[0]
     except Exception as e:
         df1 = pd.DataFrame()
-        balance = 0
         error = "資產負債表季，"+e
     try:
         df2 = pd.read_html(str(xml2))[0]
     except Exception as e:
         df2 = pd.DataFrame()
-        balance = 0
         error = "資產負債表年，"+e
     if not df1.empty and not df2.empty:
         if len(df1.index) == 53:
@@ -1106,12 +982,11 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
                     final2_rows.append(frame2_to_rows[0])
                 frame2_to_rows.pop(0)
             for i in final1_rows:
-                ws1.append(styled_cells(data=i, key1_list=general1_1_list,
-                           key2_list=general1_2_list, key3_list=bold_list, ws=ws1))
+                ws1.append(styled_cells(data=i, key1_list=BALANCE_GENERAL_1_1_LIST,
+                           key2_list=BALANCE_GENERAL_1_2_LIST, key3_list=bold_list, ws=ws1))
             for i in final2_rows:
-                ws2.append(styled_cells(data=i, key1_list=general1_1_list,
-                           key2_list=general1_2_list, key3_list=bold_list, ws=ws2))
-            balance = 0
+                ws2.append(styled_cells(data=i, key1_list=BALANCE_GENERAL_1_1_LIST,
+                           key2_list=BALANCE_GENERAL_1_2_LIST, key3_list=bold_list, ws=ws2))
             error = 0
         elif len(df1.index) == 49:
             bold_list = ["流動資產合計", "總資產", "總流動負債", "總負債",
@@ -1169,12 +1044,11 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
                     final2_rows.append(frame2_to_rows[0])
                 frame2_to_rows.pop(0)
             for i in final1_rows:
-                ws1.append(styled_cells(data=i, key1_list=finance1_1_list,
-                           key2_list=finance1_2_list, key3_list=bold_list, ws=ws1))
+                ws1.append(styled_cells(data=i, key1_list=BALANCE_FINANCE_1_1_LIST,
+                           key2_list=BALANCE_FINANCE_1_2_LIST, key3_list=bold_list, ws=ws1))
             for i in final2_rows:
-                ws2.append(styled_cells(data=i, key1_list=finance1_1_list,
-                           key2_list=finance1_2_list, key3_list=bold_list, ws=ws2))
-            balance = 0
+                ws2.append(styled_cells(data=i, key1_list=BALANCE_FINANCE_1_1_LIST,
+                           key2_list=BALANCE_FINANCE_1_2_LIST, key3_list=bold_list, ws=ws2))
             error = 0
         elif len(df1.index) == 46:
             bold_list = ["利息收益淨額", "扣除風險準備金後淨利息收入", "稅前淨收益", "稅後淨收益",
@@ -1232,74 +1106,30 @@ def get_stock_balance(pair_id, choose1_list, choose2_list, choose3_list, ws1, ws
                     final2_rows.append(frame2_to_rows[0])
                 frame2_to_rows.pop(0)
             for i in final1_rows:
-                ws1.append(styled_cells(data=i, key1_list=finance2_1_list,
-                           key2_list=finance2_2_list, key3_list=bold_list, ws=ws1))
+                ws1.append(styled_cells(data=i, key1_list=BALANCE_FINANCE_2_1_LIST,
+                           key2_list=BALANCE_FINANCE_2_2_LIST, key3_list=bold_list, ws=ws1))
             for i in final2_rows:
-                ws2.append(styled_cells(data=i, key1_list=finance2_1_list,
-                           key2_list=finance2_2_list, key3_list=bold_list, ws=ws2))
-            balance = 0
+                ws2.append(styled_cells(data=i, key1_list=BALANCE_FINANCE_2_1_LIST,
+                           key2_list=BALANCE_FINANCE_2_2_LIST, key3_list=bold_list, ws=ws2))
             error = 0
         else:
             error = "df行數" + str(len(df1.index))
-            balance = 1
-            # try:
-            #     frame1_to_rows = list(dataframe_to_rows(
-            #         df1, index=False, header=False))
-            #     end_date = frame1_to_rows[-1]
-            #     clean_end_date = []
-            #     for date in end_date:
-            #         if str(date) != "nan":
-            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[3:5]
-            #             clean_end_date.append(date_string)
-            #         if str(date) == "nan":
-            #             clean_end_date.append("")
-            #     clean_end_date[0] = "結束日期："
-            #     frame1_to_rows.pop(1)
-            #     frame1_to_rows.pop(-1)
-            #     frame1_to_rows.insert(0, clean_end_date)
-            #     frame2_to_rows = list(dataframe_to_rows(
-            #         df2, index=False, header=False))
-            #     end2_date = frame2_to_rows[-1]
-            #     clean_end2_date = []
-            #     for date in end2_date:
-            #         if str(date) != "nan":
-            #             date_string = str(date)[0:4]+"/"+str(date)[str(date).find("/")+1:]+"/"+str(date)[4:6]
-            #             clean_end2_date.append(date_string)
-            #         if str(date) == "nan":
-            #             clean_end2_date.append("")
-            #     clean_end2_date[0] = "結束日期："
-            #     frame2_to_rows.pop(1)
-            #     frame2_to_rows.pop(-1)
-            #     frame2_to_rows.insert(0, clean_end2_date)
-            #     balance = 1
-            #     error = 0
-            # except Exception as e:
-            #     frame1_to_rows = []
-            #     frame2_to_rows = []
-            #     balance = 1
-            #     error = e
-    return balance, error
-
-
-"""抓取現金流量表"""
-# https://hk.investing.com/instruments/Financials/changereporttypeajax
-
+    return error
 
 def get_stock_cashflow(pair_id, choose1_list, ws1, ws2):
-    key1_list = ["折舊/遞耗", "攤銷", "遞延稅", "非現金項目", "現金收入", "現金支出", "現金稅金支出", "現金利息支出",
-                 "營運資金變動", "資本支出", "其他投資現金流項目合計", "融資現金流項目", "發放現金紅利合計",
-                 "股票發行（贖回）淨額", "債務發行（贖回）淨額"]
+    """ 抓取現金流量表 https://hk.investing.com/instruments/Financials/changereporttypeajax """
+    CASHFLOW_LIST = [ "折舊/遞耗", "攤銷", "遞延稅", "非現金項目", "現金收入", "現金支出", "現金稅金支出", "現金利息支出",
+                     "營運資金變動", "資本支出", "其他投資現金流項目合計", "融資現金流項目", "發放現金紅利合計",
+                     "股票發行（贖回）淨額", "債務發行（贖回）淨額" ]
     cash1_list = choose1_list
     url = "https://hk.investing.com/instruments/Financials/changereporttypeajax"
-    headers = {"User-Agent": user_agent.random,
-               "x-requested-with": "XMLHttpRequest"}
     stock_data_annual = {"pair_ID": pair_id, "action": "change_report_type",
                          "report_type": "CAS", "period_type": "Interim"}
     stock_data_interim = {"pair_ID": pair_id, "action": "change_report_type",
                           "report_type": "CAS", "period_type": "Annual"}
-    res = requests.post(url, headers=headers, data=stock_data_annual)
+    res = requests.post(url, headers=post_headers, data=stock_data_annual)
     sleep(0.5)
-    res2 = requests.post(url, headers=headers, data=stock_data_interim)
+    res2 = requests.post(url, headers=post_headers, data=stock_data_interim)
     res.encoding = "UTF-8"
     res2.encoding = "UTF-8"
     xml = BeautifulSoup(res.text, "lxml")
@@ -1308,13 +1138,11 @@ def get_stock_cashflow(pair_id, choose1_list, ws1, ws2):
         df1 = pd.read_html(str(xml))[0]
     except Exception as e:
         df1 = pd.DataFrame()
-        cash = 0
         error = "現金流量表季，"+e
     try:
         df2 = pd.read_html(str(xml2))[0]
     except Exception as e:
         df2 = pd.DataFrame()
-        cash = 0
         error = "現金流量表年，"+e
     if not df1.empty and not df2.empty:
         bold_list = ["淨收益/起點", "來自經營活動的現金", "來自投資活動的現金", "來自融資活動的現金", "現金變動淨額"]
@@ -1386,31 +1214,26 @@ def get_stock_cashflow(pair_id, choose1_list, ws1, ws2):
             frame1_to_rows.pop(0)
             frame2_to_rows.pop(0)
         for i in final1_rows:
-            ws1.append(styled_cells(data=i, key1_list=key1_list,
+            ws1.append(styled_cells(data=i, key1_list=CASHFLOW_LIST,
                        key3_list=bold_list, ws=ws1))
         for i in final2_rows:
-            ws2.append(styled_cells(data=i, key1_list=key1_list,
+            ws2.append(styled_cells(data=i, key1_list=CASHFLOW_LIST,
                        key3_list=bold_list, ws=ws2))
-        cash = 0
         error = 0
-    return cash, error
-
-
-"""抓取比率"""
-# https://hk.investing.com/equities/nordea-bank-finland-ratios
-
+    return error
 
 def get_stock_ratio(url, ws):
+    """ 抓取比率 https://hk.investing.com/equities/nordea-bank-finland-ratios """
     if "?cid=" in url:
         f_index = url.find("?cid=")
         l_index = url[f_index:]
         url = url[:f_index]+"-ratios"+l_index
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
     else:
         url = url+"-ratios"
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
     pdf = pd.read_html(str(xml))[0]
@@ -1437,51 +1260,74 @@ def get_stock_ratio(url, ws):
     for i in frame_to_rows:
         ws.append(i)
 
+def get_more_dividend(pair_id,last_timestamp):
+    """ AJAX抓取更早的股息 """
+    url = "https://hk.investing.com/equities/MoreDividendsHistory"
+    stock_data = { "pairID": pair_id, "last_timestamp": last_timestamp }
+    res = requests.post(url, headers=post_headers, data=stock_data)
+    res.encoding = "UTF-8"
+    history_row = res.json()["historyRows"]
+    xml = BeautifulSoup(history_row, "html.parser")
+    try:
+        tr_list= xml.find_all("tr")
+        last_timestamp = tr_list[-1].find("td",class_="left first").attrs["data-value"]
+    except:
+        tr_list= ""
+        last_timestamp = ""
+    return tr_list,last_timestamp
 
-"""抓取股息"""
-# https://hk.investing.com/equities/apple-computer-inc
-
-
-def get_dividend(url, ws):
+def get_dividend(url, pair_id, ws):
+    """ 抓取股息 https://hk.investing.com/equities/apple-computer-inc """
     if "?cid=" in url:
         f_index = url.find("?cid=")
         l_index = url[f_index:]
         url = url[:f_index]+"-dividends"+l_index
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
     else:
         url = url+"-dividends"
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
     finaldf = pd.DataFrame()
     df = pd.read_html(str(xml))
     for i in df:
         if "除息日" in i.columns:
-            # if "除息日" in str(i.columns[0]):
             finaldf = i
-    frame_to_rows = list(dataframe_to_rows(finaldf, index=False, header=False))
-    for i in frame_to_rows:
+    dividend_list = list(dataframe_to_rows(finaldf, index=False, header=False))
+    if dividend_list:
+        last_timestamp = xml.find_all("td",class_="left first")[-1].attrs["data-value"]
+        while True:
+            tr_list, last_timestamp = get_more_dividend(pair_id=pair_id,last_timestamp=last_timestamp)
+            if tr_list:
+                for i in tr_list:
+                    all_ele = i.contents
+                    date1 = all_ele[1].text
+                    date1_value = all_ele[3].text
+                    date2 = all_ele[7].text
+                    date2_value = all_ele[9].text
+                    append_list = [ date1,date1_value,"",date2,date2_value]
+                    dividend_list.append(append_list)
+                sleep(0.5)
+            else:
+                break
+    for i in dividend_list:
         ws.append(i)
 
-
-"""抓取財報"""
-# https://hk.investing.com/equities/apple-computer-inc
-
-
 def get_financial(url, ws):
+    """ 抓取財報 https://hk.investing.com/equities/apple-computer-inc """
     if "?cid=" in url:
         f_index = url.find("?cid=")
         l_index = url[f_index:]
         url = url[:f_index]+"-earnings"+l_index
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
         df = pd.read_html(str(xml))
     else:
         url = url+"-earnings"
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=get_headers)
         res.encoding = "UTF-8"
         xml = BeautifulSoup(res.text, "lxml")
         df = pd.read_html(str(xml))
@@ -1496,18 +1342,12 @@ def get_financial(url, ws):
         newi = [i[0], i[1], ieps, irevenue]
         ws.append(newi)
 
-
-"""抓取關鍵字查詢"""
-# https://hk.investing.com/search/service/SearchInnerPage
-
-
 def get_keypoint_stocklist(word):
+    """ 抓取關鍵字查詢 https://hk.investing.com/search/service/SearchInnerPage """
     search_list = []
     url = "https://hk.investing.com/search/service/SearchInnerPage"
-    headers = {"User-Agent": user_agent.random,
-               "x-requested-with": "XMLHttpRequest"}
     stock_data = {"search_text": word, "tab": "quotes", "isFilter": True}
-    res = requests.post(url, headers=headers, data=stock_data)
+    res = requests.post(url, headers=post_headers, data=stock_data)
     res.encoding = "UTF-8"
     res = res.json()["quotes"]
     for i in res:
@@ -1518,11 +1358,8 @@ def get_keypoint_stocklist(word):
                 (name+location, "https://hk.investing.com"+i["link"], +i["pairId"]))
     return search_list
 
-
-"""抓取個股"""
-
-
 def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list, f2_2_list, f2_3_list, f3_1_list, download_path):
+    """ 抓取個股 """
     createday = str(date.today())
     errorname = createday+"error_list.xlsx"
     errorfile = Path(download_path) / errorname
@@ -1557,50 +1394,43 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
     ws13_write_column(ws13)
     pair_id = i[2]
     try:
-        profitloss_num, profiloss_error, save_type = get_profitandloss(
+        profiloss_error, save_type = get_profitandloss(
             pair_id=pair_id, choose1_list=f1_1_list, choose2_list=f1_2_list, choose3_list=f1_3_list, ws1=ws5, ws2=ws6)  # 損益表
-        balance_num = 0
         balance_error = 0
-        cash_num = 0
         cash_error = 0
         print("成功")
     except Exception as e:
         profiloss_error = e
-        profitloss_num = 0
-        balance_num = 0
         balance_error = 0
-        cash_num = 0
         cash_error = 0
-        save_type = "其它"
+        save_type = ""
         print("失敗")
     print("完成損益表", profiloss_error)
     sleep(0.5)
     if not profiloss_error:
         try:
-            balance_num, balance_error = get_stock_balance(
+            balance_error = get_stock_balance(
                 pair_id=pair_id, choose1_list=f2_1_list, choose2_list=f2_2_list, choose3_list=f2_3_list, ws1=ws7, ws2=ws8)  # 資產負債表
             sleep(0.5)
         except Exception as e:
             balance_error = e
-            balance_num = 0
         print("完成資產表", balance_error)
         try:
-            cash_num, cash_error = get_stock_cashflow(
-                pair_id=pair_id, choose1_list=f3_1_list, ws1=ws9, ws2=ws10)  # 現金流量表
+            cash_error = get_stock_cashflow(
+                pair_id=pair_id, choose1_list=f3_1_list, ws1=ws9, ws2=ws10)
             sleep(0.5)
         except Exception as e:
             cash_error = e
-            cash_num = 0
         print("完成現金表", cash_error)
         try:
-            get_stock_ratio(url=i[1], ws=ws11)  # 比率
+            get_stock_ratio(url=i[1], ws=ws11)
             radio_error = 0
             sleep(1)
         except Exception as e:
             radio_error = e
         print("完成比率", radio_error)
         try:
-            stockpair = get_stock_inventory(url=i[1], ws=ws1)  # 綜觀
+            stockpair = get_stock_inventory(url=i[1], ws=ws1)
             inventory_error = 0
             sleep(1)
         except Exception as e:
@@ -1608,7 +1438,7 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
             stockpair = ""
         print("完成綜觀", inventory_error)
         try:
-            get_stock_profile(url=i[1], ws=ws1)  # 簡介
+            get_stock_profile(url=i[1], ws=ws1)
             profile_error = 0
             sleep(1)
         except Exception as e:
@@ -1616,21 +1446,21 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
         print("完成簡介", profile_error)
         try:
             get_stock_history(pair_id=pair_id, start_date=sdate,
-                              end_date=edate, ws=ws2)  # 歷史資料
+                              end_date=edate, ws=ws2)
             history_error = 0
             sleep(1)
         except Exception as e:
             history_error = e
         print("完成歷史資料", history_error)
         try:
-            get_stock_financials(pair_id=pair_id, ws1=ws3, ws2=ws4)  # 財務摘要
+            get_stock_financials(pair_id=pair_id, ws1=ws3, ws2=ws4)
             financials_error = 0
             sleep(0.5)
         except Exception as e:
             financials_error = e
         print("完成財務摘要", financials_error)
         try:
-            get_dividend(url=i[1], ws=ws12)  # 股利
+            get_dividend(url=i[1], pair_id=pair_id, ws=ws12)  # 股利
             dividend_error = 0
             sleep(0.5)
         except Exception as e:
@@ -1645,19 +1475,13 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
         print("完成財報", financial2_error)
     name = stockpair+i[0].replace("/", "").replace("-", "").replace(" ", "").replace(
         "*", "").replace("<", "").replace(">", "").replace("?", "")+createday+".xlsx"
-    format_count = profitloss_num+balance_num+cash_num
-    if format_count > 1:
-        newname = "全格式"+name
-    else:
-        newname = name
-    if save_type == "一般":
-        store_path = download_path / "一般業" / newname
-    elif save_type == "保險":
-        store_path = download_path / "保險業" / newname
-    elif save_type == "銀行":
-        store_path = download_path / "銀行業" / newname
-    elif save_type == "其它":
-        store_path = download_path / "其它業" / newname
+    match save_type:
+        case "一般":
+            store_path = download_path / "一般業" / name
+        case "保險":
+            store_path = download_path / "保險業" / name
+        case "銀行":
+            store_path = download_path / "銀行業" / name
     for sheet in wb:
         autowidth(sheet)
     if profiloss_error:
@@ -1713,42 +1537,3 @@ def create_stockdata(i, sdate, edate, f1_1_list, f1_2_list, f1_3_list, f2_1_list
     else:
         wb.save(store_path)
         error_wb.save(errorfile)
-
-
-# get_dividend(url="https://hk.investing.com/equities/taiwan-semicon")
-# get_profitandloss(pair_id="1012665")
-# get_dividend(url="https://hk.investing.com/equities/facebook-inc")
-# get_stock_financials(pair_id="26490")
-# f1 = ['總收入', '收入', '其他收入合計', '稅收成本合計', '毛利', '經營開支總額', '銷售/一般/管理費用合計', '研發', '折舊/攤銷', '利息開支(收入)-營運淨額', '例外開支(收入)', '其 他運營開支總額', '營業收入', '利息收入（開支）- 非營運淨額', '出售資產收入（虧損）', '其他，淨額', '稅前淨收益', '備付所得稅', '稅後淨收益', '少數股東權益', '附屬公司權益', '美國公認會計準則調整', '計算特殊項目前的淨收益', '特殊項目合計', '淨收入', '淨收入調整總額', '扣除特殊項目的普通收入', '稀釋調整', '稀釋后淨收入', '稀釋后加權平均股', '稀釋后扣除特殊項目的每股盈利', '每股股利 – 普通股首次發行', '稀釋后每股標準盈利']
-# f2 = ['總收入', '保費收入合計', '投資收益淨額', '變現收益（虧損）', '其他收入合計', '經營開支總額', '虧損、福利和修訂合計', '购置成本攤銷', '銷售/一般/管理費用合計', '折舊/攤銷', '利息開支（收入）- 營運淨額', '例外開支（收入）', '其他運營開支總額', '營業收入', '利息收入（開支）- 非營運淨額', '出售資產收入（虧損）', '其他，淨額', '稅前淨收益', ' 備付所得稅', '稅後淨收益', '少數股東權益', '附屬公司權益', '美國公認會計準則調整', '計算特殊項目前的淨收益', '特殊項目合計', '淨收入', '淨收入調整總額', '扣除特殊項目的普 通收入', '稀釋調整', '稀釋后淨收入', '稀釋后加權平均股', '稀釋后扣除特殊項目的每股盈利', '每股股利 – 普通股首次發行', '稀釋后每股標準盈利']
-# f3 = ['利息收益淨額', '銀行利息收入', '利息開支總額', '風險準備金', '扣除風險準備金後淨利息收入', '銀行非利息收入', '銀行非利息開支', '稅前淨收益', '備付所得稅', '稅後淨收益', '少數股東權益', '附屬公司權益', '美國公認會計準則調整', '計算特殊項目前的淨收益', '特殊項目合計', '淨收入', '淨收入調整總額', '扣除特殊項目的普通收入', '稀釋調整', '稀釋后淨收入', '稀釋后加權平均股', '稀釋后扣除特殊項目的每股盈利', '每股股利 – 普通股首次發行', '稀釋后每股標準盈利']
-# c1 = ['流動資產合計', '現金和短期投資', '現金', '現金和現金等價物', '短期投資', '淨應收款合計', '淨交易應收款合計', '庫存合計', '預付費用', '其他流動資產合計', '總資產', '物業/廠房/設備淨總額', '物業/廠房/設備總額', '累計折舊合計', '商譽淨額', '無形資產淨額', '長期投資', '長期應收票據', '其他長期資產合計', '其他資產合計', '總流動負債', '應付賬款', '應付/應計', '應計費用', '應付票據/短期債務', '長期負債當前應收部分/資本租賃', '其他流動負債合計', '總負債', '長期債務合計', '長期債務', '資本租賃債務', '遞延所得稅', '少數股東權益', '其他負債合計', '總權益', '可贖回優先股合計', '不可贖回優先股淨額', '普通股合計', '附加資本', '保留盈餘(累計虧損)', '普通庫存股', '員工持股計劃債務擔保', '未實現收益（虧損）', '其他權益合計', '負債及股東權益總計', '已發行普通股合計', '已發行優先股合計']
-# wb = Workbook()
-# ws1 = wb.worksheets[0]
-# ws2 = wb.create_sheet("歷史價格")
-# ws3 = wb.create_sheet("財務摘要-季報")
-# ws4 = wb.create_sheet("財務摘要-年報")
-# ws5 = wb.create_sheet("損益表-季報")
-# ws6 = wb.create_sheet("損益表-年報")
-# ws7 = wb.create_sheet("資產負債表-季報")
-# ws8 = wb.create_sheet("資產負債表-年報")
-# ws9 = wb.create_sheet("現金流量表-季報")
-# ws10 = wb.create_sheet("現金流量表-年報")
-# ws11 = wb.create_sheet("比率")
-# ws12 = wb.create_sheet("股息")
-# ws13 = wb.create_sheet("財報")
-# ws1.title = "綜觀"
-# ws1_write_column(ws1)
-# ws2_write_column(ws2)
-# ws3to4_write_column(ws1=ws3,ws2=ws4)
-# get_keypoint_stocklist(word="微軟")
-# get_stock_profile(url="https://hk.investing.com/equities/microsoft-corp?cid=1184309",ws=ws1)
-# get_stock_history(pair_id="26490",start_date="2021/04/20",end_date="2021/04/20")
-# get_stock_financials(pair_id="1184309",ws1=ws3,ws2=ws4)
-# get_financial(url="https://hk.investing.com/equities/facebook-inc")
-# try:
-#     profitloss_num,profiloss_error = get_profitandloss(pair_id=pair_id,choose1_list=f1,choose2_list=f2,choose3_list=f3,ws1=ws5,ws2=ws6) # 損益表
-# except Exception as e:
-#     profitloss_num = 0
-#     profiloss_error = 1
-# wb.save("test.xlsx")

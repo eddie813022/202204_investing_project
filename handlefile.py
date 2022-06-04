@@ -12,10 +12,13 @@ import pythoncom
 import time
 import copy
 import base64
-import babel.numbers
+# import babel.numbers
 import os
 
+""" 合併EXCEL範例檔案 """
+
 def write_pathconfig(type,value):
+    """ 寫入存檔設定 """
     tempfile = Path.cwd() / "exceltemp.xlsx"
     wb = load_workbook(tempfile)
     ws = wb.active
@@ -26,12 +29,14 @@ def write_pathconfig(type,value):
     wb.save(tempfile)
 
 def align_center(root, width, height):
+    """ GUI視窗設定 """
     screenwidth = root.winfo_screenwidth()
     screenheight = root.winfo_screenheight()
     size = '%dx%d+%d+%d' % (width, height, (screenwidth - width)/2, (screenheight - height)/2)
     root.geometry(size)
 
 def final1and2_excel_event():
+    """ 新個股資料點擊事件 """
     filename = filedialog.askopenfilename(parent=window,initialdir="C:/",filetypes = (("excel files","*.xlsx"),("all files","*.*")))
     final1and2_text.config(state="normal")
     final1and2_text.delete(1.0,"end")
@@ -39,6 +44,7 @@ def final1and2_excel_event():
     final1and2_text.config(state="disable")
 
 def key30_excel_event():
+    """ 關鍵30點擊事件 """
     filename = filedialog.askopenfilename(parent=window,initialdir="C:/",filetypes = (("excel files","*.xlsx"),("all files","*.*")))
     key30_text.config(state="normal")
     key30_text.delete(1.0,"end")
@@ -46,6 +52,7 @@ def key30_excel_event():
     key30_text.config(state="disable")
 
 def source_event():
+    """ 來源檔案路徑點擊事件 """
     filename = filedialog.askdirectory(parent=window)
     if not filename:
         filename = "C:/"
@@ -56,6 +63,7 @@ def source_event():
     write_pathconfig(type="source",value=filename)
 
 def destination_event():
+    """ 目的檔案路徑點擊事件 """
     filename = filedialog.askdirectory(parent=window)
     if not filename:
         filename = "C:/"
@@ -66,6 +74,7 @@ def destination_event():
     write_pathconfig(type="destination",value=filename)
 
 def just_open(filename):
+    """ 模擬手動開啟EXCEL """
     xlApp = Dispatch("Excel.Application")
     xlApp.Visible = False
     xlBook = xlApp.Workbooks.Open(filename)
@@ -73,6 +82,7 @@ def just_open(filename):
     xlBook.Close()
 
 def copy_final1and2_xlsx(examplewb,source_wb,destination_wb):
+    """ 新個股資料複製值與格式設定 """
     wb = load_workbook(examplewb)
     wb2 = load_workbook(source_wb)
     wb_sheetnames = list(wb.sheetnames)[13:]
@@ -101,6 +111,7 @@ def copy_final1and2_xlsx(examplewb,source_wb,destination_wb):
     wb2.close()
 
 def copy_key30_xlsx(row_,col_,source_wb,destination_ws):
+    """ 關鍵30複製值與格式設定 """
     wb = load_workbook(source_wb,data_only=True)
     try:
         ws = wb["final2"]
@@ -128,6 +139,7 @@ def copy_key30_xlsx(row_,col_,source_wb,destination_ws):
     return row_
 
 def copy_newkey30_xlsx(examplewb,source_wb,destination_wb):
+    """ 新關鍵30複製值與格式設定 """
     wb = load_workbook(examplewb)
     wb2 = load_workbook(source_wb)
     wb_sheetnames = list(wb.sheetnames)[1:]#13
@@ -156,6 +168,7 @@ def copy_newkey30_xlsx(examplewb,source_wb,destination_wb):
     wb2.close()
 
 def general_final1and2_event():
+    """ 新個股生成 """
     excel_timer_lb.place_forget()
     sample_excel = final1and2_text.get("1.0","end-1c")
     if not sample_excel:
@@ -193,7 +206,14 @@ def general_final1and2_event():
     stext.see(tk.END)
     stext.config(state="disable")
 
+def general_key30_event():
+    """ 關鍵30線呈事件 """
+    key30_td = threading.Thread(target=generator_key30_event)
+    key30_td.setDaemon(True)
+    key30_td.start()
+
 def generator_key30_event():
+    """ 關鍵30生成 """
     pythoncom.CoInitialize()
     source_pwd = Path(source_path_text.get("1.0","end-1c"))
     source_pwd_folder = os.listdir(source_pwd)
@@ -283,12 +303,8 @@ def generator_key30_event():
     stext.config(state="disable")
     pythoncom.CoUninitialize()
 
-def general_key30_event():
-    key30_td = threading.Thread(target=generator_key30_event)
-    key30_td.setDaemon(True)
-    key30_td.start()
-
 def general_newkey30_event():
+    """ 新關鍵30生成 """
     excel_timer_lb.place_forget()
     key30_path = key30_text.get("1.0","end-1c")
     if not key30_path:

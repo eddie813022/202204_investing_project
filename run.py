@@ -1,109 +1,168 @@
-from crawler_request import get_pathconfig,get_exchang_dict,create_stockdata,get_stock_list,get_country_dict,read_stock_list,get_dateconfig,write_dateconfig,get_keypoint_stocklist,get_checkboxconfig,write_pathconfig
+
+# -*- coding:utf-8 -*-
 from tkinter import ttk,filedialog
 from tkinter.scrolledtext import ScrolledText
 from tkcalendar import DateEntry
 from pathlib import Path
 from openpyxl import load_workbook
 from icon import img
-import babel.numbers
+# import babel.numbers
 import tkinter as tk
 import threading
 import base64
 import time
 import os
+from crawler_request import get_pathconfig
+from crawler_request import get_exchang_dict
+from crawler_request import create_stockdata
+from crawler_request import get_stock_list
+from crawler_request import get_country_dict
+from crawler_request import read_stock_list
+from crawler_request import get_dateconfig
+from crawler_request import write_dateconfig
+from crawler_request import get_keypoint_stocklist
+from crawler_request import get_checkboxconfig
+from crawler_request import write_pathconfig
 
-# path configure
+""" 圖形化主程式 """
+
+""" 路徑設定 """
+
 path = Path.cwd()
 
-"""gui configure"""
+""" GUI初始化設定 """
+
 tmp = open("tmp.ico","wb+")
 tmp.write(base64.b64decode(img))
 tmp.close()
 window = tk.Tk()
-# gui favicon configure
+# gui favicon
 window.iconbitmap("tmp.ico")
 window.title('investing_v2.1')
 window.resizable(False,False)
-# gui theme configure
+# gui theme
 windw_style = ttk.Style(window)
 windw_style.theme_use('clam')
-# progressbar configure
+# progressbar
 windw_style.configure("red.Horizontal.TProgressbar", foreground='green', background='green')
 os.remove("tmp.ico")
 
-"""define varriable"""
-# country_list = [""]
 stop_threads = False
 country_dict = get_country_dict()
 country_list = [ i for i in country_dict.keys() ]
 country_list.insert(0,"")
 search_list= []
 market_list = []
-category_list = [{'所有板塊': '-1'}, {'消费类（非周期性）': '8'}, {'交通运输': '10'}, {'公用事业': '22'},
+CATEGORY_LIST = [ {'所有板塊': '-1'}, {'消费类（非周期性）': '8'}, {'交通运输': '10'}, {'公用事业': '22'},
                  {'医疗保健': '18'}, {'基础材料': '7'}, {'工業': '15'}, {'房地產': '23'}, {'服务': '2'},
                  {'材料': '14'}, {'消費者日常用品': '17'}, {'消费类（周期性）': '3'}, {'生产资料': '5'},
                  {'科技': '4'}, {'综合性企业': '12'}, {'能源': '13'}, {'資訊科技': '20'}, {'通訊服務': '21'},
-                 {'金融': '19'}, {'非必需消費品': '16'}]
-frame1_1_inside_text_list = ["總收入","收入","其他收入合計","稅收成本合計","毛利","經營開支總額","銷售/一般/管理費用合計",
-                             "研發","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額","營業收入",
-                             "利息收入（開支）- 非營運淨額","出售資產收入（虧損）","其他，淨額","稅前淨收益","備付所得稅",
-                             "稅後淨收益","少數股東權益","附屬公司權益","美國公認會計準則調整","計算特殊項目前的淨收益","特殊項目合計",
-                             "淨收入","淨收入調整總額","扣除特殊項目的普通收入","稀釋調整","稀釋后淨收入","稀釋后加權平均股",
-                             "稀釋后扣除特殊項目的每股盈利","每股股利 – 普通股首次發行","稀釋后每股標準盈利"]
-frame1_2_inside_text_list = ["總收入","保費收入合計","投資收益淨額","變現收益（虧損）","其他收入合計","經營開支總額","虧損、福利和修訂合計",
-                             "购置成本攤銷","銷售/一般/管理費用合計","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額",
-                             "營業收入","利息收入（開支）- 非營運淨額","出售資產收入（虧損）","其他，淨額","稅前淨收益","備付所得稅",
-                             "稅後淨收益","少數股東權益","附屬公司權益","美國公認會計準則調整","計算特殊項目前的淨收益","特殊項目合計",
-                             "淨收入","淨收入調整總額","扣除特殊項目的普通收入","稀釋調整","稀釋后淨收入","稀釋后加權平均股",
-                             "稀釋后扣除特殊項目的每股盈利","每股股利 – 普通股首次發行","稀釋后每股標準盈利"]
-frame1_3_inside_text_list = ["利息收益淨額","銀行利息收入","利息開支總額","風險準備金","扣除風險準備金後淨利息收入","銀行非利息收入",
-                             "銀行非利息開支","稅前淨收益","備付所得稅","稅後淨收益","少數股東權益","附屬公司權益","美國公認會計準則調整",
-                             "計算特殊項目前的淨收益","特殊項目合計","淨收入","淨收入調整總額","扣除特殊項目的普通收入","稀釋調整",
-                             "稀釋后淨收入","稀釋后加權平均股","稀釋后扣除特殊項目的每股盈利","每股股利 – 普通股首次發行","稀釋后每股標準盈利"]
-frame2_1_inside_text_list = ["流動資產合計","現金和短期投資","現金","現金和現金等價物","短期投資","淨應收款合計","淨交易應收款合計",
-                           "庫存合計","預付費用","其他流動資產合計","總資產","物業/廠房/設備淨總額","物業/廠房/設備總額",
-                           "累計折舊合計","商譽淨額","無形資產淨額","長期投資","長期應收票據","其他長期資產合計","其他資產合計",
-                           "總流動負債","應付賬款","應付/應計","應計費用","應付票據/短期債務","長期負債當前應收部分/資本租賃",
-                           "其他流動負債合計","總負債","長期債務合計","長期債務","資本租賃債務","遞延所得稅","少數股東權益",
-                           "其他負債合計","總權益","可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
-                           "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計","負債及股東權益總計",
-                           "已發行普通股合計","已發行優先股合計"]
-frame2_2_inside_text_list = ["流動資產合計","總資產","現金","現金和現金等價物","淨應收款合計","預付費用","物業/廠房/設備淨總額","物業/廠房/設備總額","累計折舊合計",
-                            "商譽淨額","無形資產淨額","長期投資","應收保險","長期應收票據","其他長期資產合計","遞延保單獲得成本","其他資產合計","總流動負債",
-                            "總負債","應付賬款","應付/應計","應計費用","保單負債","應付票據/短期債務","長期負債當前應收部分/資本租賃","其他流動負債合計",
-                            "長期債務合計","長期債務","資本租賃債務","遞延所得稅","少數股東權益","其他負債合計","總權益","可贖回優先股合計","不可贖回優先股淨額",
-                            "普通股合計","附加資本","保留盈餘(累計虧損)","普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計",
-                            "負債及股東權益總計","已發行普通股合計","已發行優先股合計"]
-frame2_3_inside_text_list = ["流動資產合計","總資產","銀行應付現金和欠款","其他盈利資產合計","淨貸款","物業/廠房/設備淨總額","物業/廠房/設備總額","累計折舊合計",
-                             "商譽淨額","無形資產淨額","長期投資","其他長期資產合計","其他資產合計","總流動負債","總負債","應付賬款","應付/應計","應計費用",
-                             "存款總額","其他付息負債合計","短期借貸總額","長期負債當前應收部分/資本租賃","其他流動負債合計","長期債務合計","長期債務","資本租賃債務",
-                             "遞延所得稅","少數股東權益","其他負債合計","總權益","可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
-                             "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計","負債及股東權益總計","已發行普通股合計","已發行優先股合計"]
-frame3_1_inside_text_list = ["淨收益/起點","來自經營活動的現金","折舊/遞耗","攤銷","遞延稅","非現金項目","現金收入","現金支出","現金稅金支出",
-                           "現金利息支出","營運資金變動","來自投資活動的現金","資本支出","其他投資現金流項目合計","來自融資活動的現金",
-                           "融資現金流項目","發放現金紅利合計","股票發行（贖回）淨額","債務發行（贖回）淨額","外匯影響","現金變動淨額",
-                           "期初現金結餘","期末現金結餘","自由現金流","自由現金流增長","自由現金流收益率"]
+                 {'金融': '19'}, {'非必需消費品': '16'} ]
 
-# 建立複選框變數清單(代替range(number))
-f1_1_var_namelist = [ "f1_in_f1_va"+str(x+1) for x in range(0,33) ]
-f1_2_var_namelist = [ "f1_in_f2_va"+str(x+1) for x in range(0,34) ]
-f1_3_var_namelist = [ "f1_in_f3_va"+str(x+1) for x in range(0,24) ]
-f2_1_var_namelist = [ "f2_in_f1_va"+str(x+1) for x in range(0,47) ]
-f2_2_var_namelist = [ "f2_in_f2_va"+str(x+1) for x in range(0,45) ]
-f2_3_var_namelist = [ "f2_in_f3_va"+str(x+1) for x in range(0,42) ]
-f3_1_var_namelist = [ "f3_in_f1_va"+str(x+1) for x in range(0,26) ]
+FRAME1_1_INSIDE_LIST = [ "總收入","收入","其他收入合計","稅收成本合計","毛利","經營開支總額","銷售/一般/管理費用合計",
+                        "研發","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額","營業收入",
+                        "利息收入（開支）- 非營運淨額","出售資產收入（虧損）","其他，淨額","稅前淨收益","備付所得稅",
+                        "稅後淨收益","少數股東權益","附屬公司權益","美國公認會計準則調整","計算特殊項目前的淨收益","特殊項目合計",
+                        "淨收入","淨收入調整總額","扣除特殊項目的普通收入","稀釋調整","稀釋后淨收入","稀釋后加權平均股",
+                        "稀釋后扣除特殊項目的每股盈利","每股股利 – 普通股首次發行","稀釋后每股標準盈利" ]
 
-# 建立複選框變數清單
-frame1_1_check_btn_list = [ "f1_1_check_btn" +str(x+1) for x in range(0,33) ]
-frame1_2_check_btn_list = [ "f1_2_check_btn" +str(x+1) for x in range(0,34) ]
-frame1_3_check_btn_list = [ "f1_3_check_btn" +str(x+1) for x in range(0,24) ]
-frame2_1_check_btn_list = [ "f2_1_check_btn" +str(x+1) for x in range(0,47) ]
-frame2_2_check_btn_list = [ "f2_2_check_btn" +str(x+1) for x in range(0,45) ]
-frame2_3_check_btn_list = [ "f2_3_check_btn" +str(x+1) for x in range(0,42) ]
-frame3_1_check_btn_list = [ "f3_1_check_btn" +str(x+1) for x in range(0,26) ]
+FRAME1_2_INSIDE_LIST = [ "總收入","保費收入合計","投資收益淨額","變現收益（虧損）","其他收入合計","經營開支總額","虧損、福利和修訂合計",
+                        "购置成本攤銷","銷售/一般/管理費用合計","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額",
+                        "營業收入","利息收入（開支）- 非營運淨額","出售資產收入（虧損）","其他，淨額","稅前淨收益","備付所得稅",
+                        "稅後淨收益","少數股東權益","附屬公司權益","美國公認會計準則調整","計算特殊項目前的淨收益","特殊項目合計",
+                        "淨收入","淨收入調整總額","扣除特殊項目的普通收入","稀釋調整","稀釋后淨收入","稀釋后加權平均股",
+                        "稀釋后扣除特殊項目的每股盈利","每股股利 – 普通股首次發行","稀釋后每股標準盈利" ]
 
-# event functions
+FRAME1_3_INSIDE_LIST = [ "利息收益淨額","銀行利息收入","利息開支總額","風險準備金","扣除風險準備金後淨利息收入","銀行非利息收入",
+                        "銀行非利息開支","稅前淨收益","備付所得稅","稅後淨收益","少數股東權益","附屬公司權益","美國公認會計準則調整",
+                        "計算特殊項目前的淨收益","特殊項目合計","淨收入","淨收入調整總額","扣除特殊項目的普通收入","稀釋調整",
+                        "稀釋后淨收入","稀釋后加權平均股","稀釋后扣除特殊項目的每股盈利","每股股利 – 普通股首次發行","稀釋后每股標準盈利" ]
+
+FRAME2_1_INSIDE_LIST = [ "流動資產合計","現金和短期投資","現金","現金和現金等價物","短期投資","淨應收款合計","淨交易應收款合計",
+                        "庫存合計","預付費用","其他流動資產合計","總資產","物業/廠房/設備淨總額","物業/廠房/設備總額",
+                        "累計折舊合計","商譽淨額","無形資產淨額","長期投資","長期應收票據","其他長期資產合計","其他資產合計",
+                        "總流動負債","應付賬款","應付/應計","應計費用","應付票據/短期債務","長期負債當前應收部分/資本租賃",
+                        "其他流動負債合計","總負債","長期債務合計","長期債務","資本租賃債務","遞延所得稅","少數股東權益",
+                        "其他負債合計","總權益","可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
+                        "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計","負債及股東權益總計",
+                        "已發行普通股合計","已發行優先股合計" ]
+
+FRAME2_2_INSIDE_LIST = [ "流動資產合計","總資產","現金","現金和現金等價物","淨應收款合計","預付費用","物業/廠房/設備淨總額","物業/廠房/設備總額","累計折舊合計",
+                        "商譽淨額","無形資產淨額","長期投資","應收保險","長期應收票據","其他長期資產合計","遞延保單獲得成本","其他資產合計","總流動負債",
+                        "總負債","應付賬款","應付/應計","應計費用","保單負債","應付票據/短期債務","長期負債當前應收部分/資本租賃","其他流動負債合計",
+                        "長期債務合計","長期債務","資本租賃債務","遞延所得稅","少數股東權益","其他負債合計","總權益","可贖回優先股合計","不可贖回優先股淨額",
+                        "普通股合計","附加資本","保留盈餘(累計虧損)","普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計",
+                        "負債及股東權益總計","已發行普通股合計","已發行優先股合計" ]
+
+FRAME2_3_INSIDE_LIST = [ "流動資產合計","總資產","銀行應付現金和欠款","其他盈利資產合計","淨貸款","物業/廠房/設備淨總額","物業/廠房/設備總額","累計折舊合計",
+                        "商譽淨額","無形資產淨額","長期投資","其他長期資產合計","其他資產合計","總流動負債","總負債","應付賬款","應付/應計","應計費用",
+                        "存款總額","其他付息負債合計","短期借貸總額","長期負債當前應收部分/資本租賃","其他流動負債合計","長期債務合計","長期債務","資本租賃債務",
+                        "遞延所得稅","少數股東權益","其他負債合計","總權益","可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
+                        "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計","負債及股東權益總計","已發行普通股合計","已發行優先股合計" ]
+
+FRAME3_1_INSIDE_LIST = [ "淨收益/起點","來自經營活動的現金","折舊/遞耗","攤銷","遞延稅","非現金項目","現金收入","現金支出","現金稅金支出",
+                        "現金利息支出","營運資金變動","來自投資活動的現金","資本支出","其他投資現金流項目合計","來自融資活動的現金",
+                        "融資現金流項目","發放現金紅利合計","股票發行（贖回）淨額","債務發行（贖回）淨額","外匯影響","現金變動淨額",
+                        "期初現金結餘","期末現金結餘","自由現金流","自由現金流增長","自由現金流收益率" ]
+
+F2_1_BLUE_BTN_LIST = [ "現金和短期投資","淨應收款合計","庫存合計","預付費用","其他流動資產合計",
+                      "物業/廠房/設備淨總額","商譽淨額","無形資產淨額","長期投資",
+                      "長期應收票據","其他長期資產合計","其他資產合計","應付賬款",
+                      "應付/應計","應計費用","應付票據/短期債務","長期負債當前應收部分/資本租賃",
+                      "其他流動負債合計","長期債務合計","遞延所得稅","少數股東權益","其他負債合計",
+                      "可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
+                      "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計" ]
+
+F2_1_GREEN_BTN_LIST = [ "現金","現金和現金等價物","短期投資","淨交易應收款合計","物業/廠房/設備總額","累計折舊合計","長期債務","資本租賃債務" ]
+
+F2_2_BLUE_BTN_LIST = [ "現金","現金和現金等價物","淨應收款合計","預付費用","物業/廠房/設備淨總額","商譽淨額","無形資產淨額","長期投資",
+                      "應收保險","長期應收票據","其他長期資產合計","遞延保單獲得成本","其他資產合計","應付賬款","應付/應計","應計費用",
+                      "保單負債","應付票據/短期債務","長期負債當前應收部分/資本租賃","其他流動負債合計","長期債務合計","遞延所得稅",
+                      "少數股東權益","其他負債合計","可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
+                      "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計" ]
+
+F2_2_GREEN_BTN_LIST = [ "物業/廠房/設備總額","累計折舊合計","長期債務","資本租賃債務" ]
+
+F2_3_BLUE_BTN_LIST = [ "銀行應付現金和欠款","其他盈利資產合計","淨貸款","物業/廠房/設備淨總額","商譽淨額","無形資產淨額","長期投資","其他長期資產合計",
+                      "其他資產合計","應付賬款","應付/應計","應計費用","存款總額","其他付息負債合計","短期借貸總額","長期負債當前應收部分/資本租賃",
+                      "其他流動負債合計","長期債務合計","遞延所得稅","少數股東權益","其他負債合計","可贖回優先股合計","不可贖回優先股淨額","普通股合計",
+                      "附加資本","保留盈餘(累計虧損)","普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計" ]
+
+F2_3_GREEN_BTN_LIST = [ "物業/廠房/設備總額","累計折舊合計","長期債務","資本租賃債務" ]
+
+F1_1_BLUE_BTN_LIST = [ "收入","其他收入合計","銷售/一般/管理費用合計","研發","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額" ]
+
+F1_2_BLUE_BTN_LIST = [ "保費收入合計","投資收益淨額","變現收益（虧損）","其他收入合計","虧損、福利和修訂合計","购置成本攤銷",
+                        "銷售/一般/管理費用合計","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額"]
+
+F1_3_BLUE_BTN_LIST = [ "銀行利息收入","利息開支總額" ]
+
+F3_1_BLUE_BTN_LIST = [ "折舊/遞耗","攤銷","遞延稅","非現金項目","現金收入","現金支出","現金稅金支出","現金利息支出",
+                      "營運資金變動","資本支出","其他投資現金流項目合計","融資現金流項目","發放現金紅利合計",
+                      "股票發行（贖回）淨額","債務發行（贖回）淨額"]
+
+""" 建立複選框變數清單 """
+
+F1_1_VAR_NAME_lIST = [ "f1_in_f1_va"+str(x+1) for x in range(0,33) ]
+F1_2_VAR_NAME_lIST = [ "f1_in_f2_va"+str(x+1) for x in range(0,34) ]
+F1_3_VAR_NAME_lIST = [ "f1_in_f3_va"+str(x+1) for x in range(0,24) ]
+F2_1_VAR_NAME_lIST = [ "f2_in_f1_va"+str(x+1) for x in range(0,47) ]
+F2_2_VAR_NAME_lIST = [ "f2_in_f2_va"+str(x+1) for x in range(0,45) ]
+F2_3_VAR_NAME_lIST = [ "f2_in_f3_va"+str(x+1) for x in range(0,42) ]
+F3_1_VAR_NAME_lIST = [ "f3_in_f1_va"+str(x+1) for x in range(0,26) ]
+
+""" 建立複選框按鈕變數清單 """
+F1_1_CHECK_BTN_LIST = [ "f1_1_check_btn" +str(x+1) for x in range(0,33) ]
+F1_2_CHECK_BTN_LIST = [ "f1_2_check_btn" +str(x+1) for x in range(0,34) ]
+F1_3_CHECK_BTN_LIST = [ "f1_3_check_btn" +str(x+1) for x in range(0,24) ]
+F2_1_CHECK_BTN_LIST = [ "f2_1_check_btn" +str(x+1) for x in range(0,47) ]
+F2_2_CHECK_BTN_LIST = [ "f2_2_check_btn" +str(x+1) for x in range(0,45) ]
+F2_3_CHECK_BTN_LIST = [ "f2_3_check_btn" +str(x+1) for x in range(0,42) ]
+F3_1_CHECK_BTN_LIST = [ "f3_1_check_btn" +str(x+1) for x in range(0,26) ]
+
+
 def country_select_event():
+    """ 國家選單點擊事件  """
     global market_list
     country_name = country_btn.get()
     if country_name:
@@ -118,7 +177,7 @@ def country_select_event():
             market_name_list = [ i for i in market_list ]
             market_btn["value"] = market_name_list
             market_btn.current(0)
-            category_name_list = [ j for i in category_list for j,k in i.items() ]
+            category_name_list = [ j for i in CATEGORY_LIST for j,k in i.items() ]
             category_btn["value"] = category_name_list
             category_btn.current(0)
             stext.insert(tk.END,country_name+"共有"+str(len(market_list)-1)+"筆交易所.\n")
@@ -133,6 +192,7 @@ def country_select_event():
             stext.config(state="disable")
 
 def country_enter_envet():
+    """ 個股輸入欄ENTER事件 """
     global search_list
     if search_list:
         search_list.clear()
@@ -149,16 +209,19 @@ def country_enter_envet():
         stext.config(state="disable")
 
 def country_btn_event(event):
+    """ 國家選單線呈事件觸發 """
     country_btn_td = threading.Thread(target=country_select_event)
     country_btn_td.setDaemon(True)
     country_btn_td.start()
 
 def country_btn_enter_event(event):
+    """ 個股輸入欄ENTER線呈事件觸發 """
     country_select_td = threading.Thread(target=country_enter_envet)
     country_select_td.setDaemon(True)
     country_select_td.start()
 
-def loading_evnet(num):
+def single_loading_event(num):
+    """ 個股讀取條事件 """
     progress["value"] = 0
     if num == 16:
         timer = 6.5
@@ -172,7 +235,8 @@ def loading_evnet(num):
     progress["value"] = 100
     window.update()
 
-def loading2_evnet(num):
+def bulk_loading_event(num):
+    """ 批量個股讀取條事件 """
     if num < 100:
         addnum = int(100 / num)
         while progress["value"] < progress["maximum"]:
@@ -195,32 +259,38 @@ def loading2_evnet(num):
     window.update()
 
 def start_date_btn_event(event):
+    """ 開始日期點擊事件 """
     date_ = start_date_btn.get()
     write_dateconfig(date_)
 
 def singlecrawler_btn_event():
+    """ 個股下載線呈事件 """
     single_btn_td = threading.Thread(target=singledownload_event)
     single_btn_td.setDaemon(True)
     single_btn_td.start()
 
 def bulkcrawler_btn_event():
+    """ 批量下載線呈事件 """
     bulk_btn_td = threading.Thread(target=bulkdownload_event)
     bulk_btn_td.setDaemon(True)
     bulk_btn_td.start()
 
 def crawlerstocklist_btn_event():
+    """ 個股清單下載線呈事件 """
     stocklist_btn_td = threading.Thread(target=crawlerstocklist_event)
     stocklist_btn_td.setDaemon(True)
     stocklist_btn_td.start()
 
 def stopcrawler_btn_event():
+    """ 暫停下載線呈事件 """
     stop_btn_td =threading.Thread(target=stopcrawler_event)
     stop_btn_td.setDaemon(True)
     stop_btn_td.start()
 
 def crawlerstocklist_event():
+    """ 個股清單下載點擊事件 """
     progress["value"] = 0
-    stocktimer_lb.place_forget() 
+    stocktimer_lb.place_forget()
     crawlerstocklist_btn.config(state="disable")
     bulkcrawler_btn.config(state="disable")
     bulk_start_btn.config(state="disable")
@@ -258,7 +328,7 @@ def crawlerstocklist_event():
     else:
         exchange_code = "a"
     try:
-        for i in category_list:
+        for i in CATEGORY_LIST:
             if category_name in i.keys():
                 category_code = i.get(category_name)
                 if category_code == "-1":
@@ -312,13 +382,13 @@ def singledownload_event():
     checkwb = load_workbook(tempfile)
     checkws = checkwb.active
     try:
-        f1general_choose_list = [ globals()["f1_in_f1_va"+str(i)].get() for i in range(len(f1_1_var_namelist)) ]
-        f1finance_choose_list = [ globals()["f1_in_f2_va"+str(i)].get() for i in range(len(f1_2_var_namelist)) ]
-        f1finance2_choose_list = [ globals()["f1_in_f3_va"+str(i)].get() for i in range(len(f1_3_var_namelist)) ]
-        f2general_choose_list = [ globals()["f2_in_f1_va"+str(i)].get() for i in range(len(f2_1_var_namelist)) ]
-        f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(f2_2_var_namelist)) ]
-        f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(f2_3_var_namelist)) ]
-        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(f3_1_var_namelist)) ]
+        f1general_choose_list = [ globals()["f1_in_f1_va"+str(i)].get() for i in range(len(F1_1_VAR_NAME_lIST)) ]
+        f1finance_choose_list = [ globals()["f1_in_f2_va"+str(i)].get() for i in range(len(F1_2_VAR_NAME_lIST)) ]
+        f1finance2_choose_list = [ globals()["f1_in_f3_va"+str(i)].get() for i in range(len(F1_3_VAR_NAME_lIST)) ]
+        f2general_choose_list = [ globals()["f2_in_f1_va"+str(i)].get() for i in range(len(F2_1_VAR_NAME_lIST)) ]
+        f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(F2_2_VAR_NAME_lIST)) ]
+        f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(F2_3_VAR_NAME_lIST)) ]
+        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(F3_1_VAR_NAME_lIST)) ]
         download_path = Path(downloadpath_text.get("1.0","end-1c"))
         start_date = start_date_btn.get()
         end_date = end_date_btn.get()
@@ -352,7 +422,7 @@ def singledownload_event():
             stext.see(tk.END)
             stext.config(state="disable")
         elif entertext in [ i[0] for i in search_list ]:
-            progres_td = threading.Thread(target=loading_evnet,args=(16,))
+            progres_td = threading.Thread(target=single_loading_event,args=(16,))
             progres_td.setDaemon(True)
             progres_td.start()
             folder1 = download_path / "一般業"
@@ -388,6 +458,7 @@ def singledownload_event():
     singlecrawler_btn.config(state="normal")
 
 def bulkdownload_event():
+    """ 批量下載點擊事件 """
     global stop_threads
     stop_threads = False
     progress["value"] = 0
@@ -407,13 +478,13 @@ def bulkdownload_event():
     try:
         wb = load_workbook(stock_path)
         ws = wb.active
-        f1general_choose_list = [ globals()["f1_in_f1_va"+str(i)].get() for i in range(len(f1_1_var_namelist)) ]
-        f1finance_choose_list = [ globals()["f1_in_f2_va"+str(i)].get() for i in range(len(f1_2_var_namelist)) ]
-        f1finance2_choose_list = [ globals()["f1_in_f3_va"+str(i)].get() for i in range(len(f1_3_var_namelist)) ]
-        f2general_choose_list = [ globals()["f2_in_f1_va"+str(i)].get() for i in range(len(f2_1_var_namelist)) ]
-        f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(f2_2_var_namelist)) ]
-        f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(f2_3_var_namelist)) ]
-        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(f3_1_var_namelist)) ]
+        f1general_choose_list = [ globals()["f1_in_f1_va"+str(i)].get() for i in range(len(F1_1_VAR_NAME_lIST)) ]
+        f1finance_choose_list = [ globals()["f1_in_f2_va"+str(i)].get() for i in range(len(F1_2_VAR_NAME_lIST)) ]
+        f1finance2_choose_list = [ globals()["f1_in_f3_va"+str(i)].get() for i in range(len(F1_3_VAR_NAME_lIST)) ]
+        f2general_choose_list = [ globals()["f2_in_f1_va"+str(i)].get() for i in range(len(F2_1_VAR_NAME_lIST)) ]
+        f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(F2_2_VAR_NAME_lIST)) ]
+        f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(F2_3_VAR_NAME_lIST)) ]
+        f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(F3_1_VAR_NAME_lIST)) ]
         download_path = Path(bulkdownloadpath_text.get("1.0","end-1c"))
         start_date = start_date_btn.get()
         end_date = end_date_btn.get()
@@ -454,7 +525,7 @@ def bulkdownload_event():
             stext.insert(tk.END,"=====================================\n")
             stext.see(tk.END)
             stext.config(state="disable")
-            progres_bk = threading.Thread(target=loading2_evnet,args=(counter_num,))
+            progres_bk = threading.Thread(target=bulk_loading_event,args=(counter_num,))
             progres_bk.setDaemon(True)
             progres_bk.start()
             for i in range(last_index,ws.max_row+1):
@@ -512,6 +583,7 @@ def bulkdownload_event():
     progress["value"] = 100
 
 def stopcrawler_event():
+    """ 暫停下載點擊事件 """
     global stop_threads
     progress["value"] = 0
     stocktimer_lb.place_forget()
@@ -527,75 +599,84 @@ def stopcrawler_event():
     print("kill successful")
 
 def align_center(root, width, height):
+    """ GUI視窗設定 """
     screenwidth = root.winfo_screenwidth()
     screenheight = root.winfo_screenheight()
     size = '%dx%d+%d+%d' % (width, height, (screenwidth - width)/2, (screenheight - height)/2)
     root.geometry(size)
 
 def f1_f1_selectall_event():
-    for i in range(len(frame1_1_check_btn_list)):
+    """ 損益表，一般類別全選點擊事件 """
+    for i in range(len(F1_1_CHECK_BTN_LIST)):
         globals()["f1_in_f1_btn"+str(i)].select()
 
 def f1_f1_dselectall_event():
-    for i in range(len(frame1_1_check_btn_list)):
+    """ 損益表，一般類別取消全選點擊事件 """
+    for i in range(len(F1_1_CHECK_BTN_LIST)):
         globals()["f1_in_f1_btn"+str(i)].deselect()
 
 def f1_f2_selectall_event():
-    for i in range(len(frame1_2_check_btn_list)):
+    """ 損益表，保險類別全選點擊事件 """
+    for i in range(len(F1_2_CHECK_BTN_LIST)):
         globals()["f1_in_f2_btn"+str(i)].select()
 
 def f1_f2_dselectall_event():
-    for i in range(len(frame1_2_check_btn_list)):
+    """ 損益表，保險類別取消全選點擊事件 """
+    for i in range(len(F1_2_CHECK_BTN_LIST)):
         globals()["f1_in_f2_btn"+str(i)].deselect()
 
 def f1_f3_selectall_event():
-    for i in range(len(frame1_3_check_btn_list)):
+    """ 損益表，銀行類別全選點擊事件 """
+    for i in range(len(F1_3_CHECK_BTN_LIST)):
         globals()["f1_in_f3_btn"+str(i)].select()
 
 def f1_f3_dselectall_event():
-    for i in range(len(frame1_3_check_btn_list)):
+    """ 損益表，銀行類別取消全選點擊事件 """
+    for i in range(len(F1_3_CHECK_BTN_LIST)):
         globals()["f1_in_f3_btn"+str(i)].deselect()
 
 def f2_f1_selectall_event():
-    for i in range(len(frame2_1_check_btn_list)):
+    """ 資產負債表，一般類別全選點擊事件 """
+    for i in range(len(F2_1_CHECK_BTN_LIST)):
         globals()["f2_in_f1_btn"+str(i)].select()
 
 def f2_f1_dselectall_event():
-    for i in range(len(frame2_1_check_btn_list)):
+    """ 資產負債表，一般類別取消全選點擊事件 """
+    for i in range(len(F2_1_CHECK_BTN_LIST)):
         globals()["f2_in_f1_btn"+str(i)].deselect()
 
 def f2_f2_selectall_event():
-    for i in range(len(frame2_2_check_btn_list)):
+    """ 資產負債表，保險類別全選點擊事件 """
+    for i in range(len(F2_2_CHECK_BTN_LIST)):
         globals()["f2_in_f2_btn"+str(i)].select()
 
 def f2_f2_dselectall_event():
-    for i in range(len(frame2_2_check_btn_list)):
+    """ 資產負債表，保險類別取消全選點擊事件 """
+    for i in range(len(F2_2_CHECK_BTN_LIST)):
         globals()["f2_in_f2_btn"+str(i)].deselect()
 
 def f2_f3_selectall_event():
-    for i in range(len(frame2_3_check_btn_list)):
+    """ 資產負債表，銀行類別全選點擊事件 """
+    for i in range(len(F2_3_CHECK_BTN_LIST)):
         globals()["f2_in_f3_btn"+str(i)].select()
 
 def f2_f3_dselectall_event():
-    for i in range(len(frame2_3_check_btn_list)):
+    """ 資產負債表，銀行類別取消全選點擊事件 """
+    for i in range(len(F2_3_CHECK_BTN_LIST)):
         globals()["f2_in_f3_btn"+str(i)].deselect()
 
 def f3_f1_selectall_event():
-    for i in range(len(frame3_1_check_btn_list)):
+    """ 現金流量表，一般類別全選點擊事件 """
+    for i in range(len(F3_1_CHECK_BTN_LIST)):
         globals()["f3_in_f1_btn"+str(i)].select()
 
 def f3_f1_dselectall_event():
-    for i in range(len(frame3_1_check_btn_list)):
+    """ 現金流量表，一般類別取消全選點擊事件 """
+    for i in range(len(F3_1_CHECK_BTN_LIST)):
         globals()["f3_in_f1_btn"+str(i)].deselect()
 
-def samplepath_event():
-    filename = filedialog.askopenfilename(parent=window,initialdir="C:/",filetypes = (("excel files","*.xlsx"),("all files","*.*")))
-    samplepath_text.config(state="normal")
-    samplepath_text.delete(1.0,"end")
-    samplepath_text.insert(1.0, filename)
-    samplepath_text.config(state="disable")
-
-def downloadpath_event():
+def singledownload_path_event():
+    """ 個股下載路徑點擊事件 """
     filename = filedialog.askdirectory(parent=window)
     if not filename:
         filename = "C:/"
@@ -605,7 +686,8 @@ def downloadpath_event():
     downloadpath_text.config(state="disable")
     write_pathconfig(type="single",download_path=filename)
 
-def downloadpath2_event():
+def bulkdownload_path_event():
+    """ 批量下載路徑點擊事件 """
     filename = filedialog.askdirectory(parent=window)
     if not filename:
         filename = "C:/"
@@ -616,49 +698,48 @@ def downloadpath2_event():
     write_pathconfig(type="bulk",download_path=filename)
 
 def stocklistpath_event():
+    """ 個股清單路徑點擊事件 """
     filename = filedialog.askopenfilename(parent=window,initialdir="C:/",filetypes = (("excel files","*.xlsx"),("all files","*.*")))
     stocklistpath_text.config(state="normal")
     stocklistpath_text.delete(1.0,"end")
     stocklistpath_text.insert(1.0, filename)
     stocklistpath_text.config(state="disable")
 
-# 批量建立tkinter變數
-def f1_var_name():
-    for i in range(len(f1_1_var_namelist)):
+def f1_name_initialization():
+    """ 損益表變數實例化 """
+    for i in range(len(F1_1_VAR_NAME_lIST)):
         globals()["f1_in_f1_va"+str(i)] = tk.StringVar()
-    for i in range(len(f1_2_var_namelist)):
+    for i in range(len(F1_2_VAR_NAME_lIST)):
         globals()["f1_in_f2_va"+str(i)] = tk.StringVar()
-    for i in range(len(f1_3_var_namelist)):
+    for i in range(len(F1_3_VAR_NAME_lIST)):
         globals()["f1_in_f3_va"+str(i)] = tk.StringVar()
 
-def f2_var_name():
-    for i in range(len(f2_1_var_namelist)):
+def f2_name_initialization():
+    """ 資產負債表變數實例化 """
+    for i in range(len(F2_1_VAR_NAME_lIST)):
         globals()["f2_in_f1_va"+str(i)] = tk.StringVar()
-    for i in range(len(f2_2_var_namelist)):
+    for i in range(len(F2_2_VAR_NAME_lIST)):
         globals()["f2_in_f2_va"+str(i)] = tk.StringVar()
-    for i in range(len(f2_3_var_namelist)):
+    for i in range(len(F2_3_VAR_NAME_lIST)):
         globals()["f2_in_f3_va"+str(i)] = tk.StringVar()
 
-def f3_var_name():
-    for i in range(len(f3_1_var_namelist)):
+def f3_name_initialization():
+    """ 現金流量表變數實例化 """
+    for i in range(len(F3_1_VAR_NAME_lIST)):
         globals()["f3_in_f1_va"+str(i)] = tk.StringVar()
 
-# 批量建立損益表複選按鈕
 def frame1_check_btn():
-    key1_list = ["收入","其他收入合計","銷售/一般/管理費用合計","研發","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額"]
-    key2_list = ["保費收入合計","投資收益淨額","變現收益（虧損）","其他收入合計","虧損、福利和修訂合計","购置成本攤銷",
-                 "銷售/一般/管理費用合計","折舊/攤銷","利息開支（收入）- 營運淨額","例外開支（收入）","其他運營開支總額"]
-    key3_list = ["銀行利息收入","利息開支總額"]
-    copy_frame1_1_list = frame1_1_inside_text_list
-    copy_frame1_2_list = frame1_2_inside_text_list
-    copy_frame1_3_list = frame1_3_inside_text_list
+    """ 損益表複選單按鈕實例化 """
+    frame1_1_list = FRAME1_1_INSIDE_LIST.copy()
+    frame1_2_list = FRAME1_2_INSIDE_LIST.copy()
+    frame1_3_list = FRAME1_3_INSIDE_LIST.copy()
     opt1 = tk.IntVar()
     opt2 = tk.IntVar()
     opt3 = tk.IntVar()
     frame1_inside_1_sall_rbtn = tk.Radiobutton(frame1_inside_1_text, variable=opt1,value=1,text="全選",
                                                command=f1_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
     frame1_inside_1_dall_rbtn = tk.Radiobutton(frame1_inside_1_text, variable=opt1,value=2,text="取消全選",
-                                               command=f1_f1_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))  
+                                               command=f1_f1_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))
     frame1_inside_2_sall_rbtn = tk.Radiobutton(frame1_inside_2_text, var=opt2,value=1,text="全選",
                                                command=f1_f2_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
     frame1_inside_2_dall_rbtn = tk.Radiobutton(frame1_inside_2_text, var=opt2,value=2,text="取消全選",
@@ -673,70 +754,51 @@ def frame1_check_btn():
     frame1_inside_2_text.window_create("end", window=frame1_inside_2_dall_rbtn)
     frame1_inside_3_text.window_create("end", window=frame1_inside_3_sall_rbtn)
     frame1_inside_3_text.window_create("end", window=frame1_inside_3_dall_rbtn)
-    for i in range(len(frame1_1_check_btn_list)):
-        if copy_frame1_1_list[0] in key1_list:
-            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(frame1_inside_1_text,text=copy_frame1_1_list[0],var=globals()["f1_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=copy_frame1_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+    for i in range(len(F1_1_CHECK_BTN_LIST)):
+        if frame1_1_list[0] in F1_1_BLUE_BTN_LIST:
+            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(frame1_inside_1_text,text=frame1_1_list[0],var=globals()["f1_in_f1_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame1_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame1_inside_1_text.window_create("end", window=globals()["f1_in_f1_btn"+str(i)])
         else:
-            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(frame1_inside_1_text,text=copy_frame1_1_list[0],var=globals()["f1_in_f1_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame1_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(frame1_inside_1_text,text=frame1_1_list[0],var=globals()["f1_in_f1_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=frame1_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame1_inside_1_text.window_create("end", window=globals()["f1_in_f1_btn"+str(i)])
-        if len(copy_frame1_1_list) >1:
+        if len(frame1_1_list) >1:
             frame1_inside_1_text.insert("end", "\n")
-        copy_frame1_1_list.pop(0)
-    for i in range(len(frame1_2_check_btn_list)):
-        if copy_frame1_2_list[0] in key2_list:
-            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(frame1_inside_2_text,text=copy_frame1_2_list[0],var=globals()["f1_in_f2_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=copy_frame1_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        frame1_1_list.pop(0)
+    for i in range(len(F1_2_CHECK_BTN_LIST)):
+        if frame1_2_list[0] in F1_2_BLUE_BTN_LIST:
+            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(frame1_inside_2_text,text=frame1_2_list[0],var=globals()["f1_in_f2_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame1_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame1_inside_2_text.window_create("end", window=globals()["f1_in_f2_btn"+str(i)])
         else:
-            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(frame1_inside_2_text,text=copy_frame1_2_list[0],var=globals()["f1_in_f2_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame1_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(frame1_inside_2_text,text=frame1_2_list[0],var=globals()["f1_in_f2_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=frame1_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame1_inside_2_text.window_create("end", window=globals()["f1_in_f2_btn"+str(i)])
-        if len(copy_frame1_2_list) >1:
+        if len(frame1_2_list) >1:
             frame1_inside_2_text.insert("end", "\n")
-        copy_frame1_2_list.pop(0)
-    for i in range(len(frame1_3_check_btn_list)):
-        if copy_frame1_3_list[0] in key3_list:
-            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(frame1_inside_3_text,text=copy_frame1_3_list[0],var=globals()["f1_in_f3_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=copy_frame1_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        frame1_2_list.pop(0)
+    for i in range(len(F1_3_CHECK_BTN_LIST)):
+        if frame1_3_list[0] in F1_3_BLUE_BTN_LIST:
+            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(frame1_inside_3_text,text=frame1_3_list[0],var=globals()["f1_in_f3_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame1_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame1_inside_3_text.window_create("end", window=globals()["f1_in_f3_btn"+str(i)])
         else:
-            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(frame1_inside_3_text,text=copy_frame1_3_list[0],var=globals()["f1_in_f3_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame1_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(frame1_inside_3_text,text=frame1_3_list[0],var=globals()["f1_in_f3_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=frame1_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame1_inside_3_text.window_create("end", window=globals()["f1_in_f3_btn"+str(i)])
-        if len(copy_frame1_3_list) >1:
+        if len(frame1_3_list) >1:
             frame1_inside_3_text.insert("end", "\n")
-        copy_frame1_3_list.pop(0)
+        frame1_3_list.pop(0)
     return frame1_inside_1_sall_rbtn,frame1_inside_2_sall_rbtn,frame1_inside_3_sall_rbtn
 
-# 批量建立資產負債表複選按鈕
 def frame2_check_btn():
-    key1_1_list = ["現金和短期投資","淨應收款合計","庫存合計","預付費用","其他流動資產合計",
-                   "物業/廠房/設備淨總額","商譽淨額","無形資產淨額","長期投資",
-                   "長期應收票據","其他長期資產合計","其他資產合計","應付賬款",
-                   "應付/應計","應計費用","應付票據/短期債務","長期負債當前應收部分/資本租賃",
-                   "其他流動負債合計","長期債務合計","遞延所得稅","少數股東權益","其他負債合計",
-                   "可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
-                   "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計"]
-    key1_2_list = ["現金","現金和現金等價物","短期投資","淨交易應收款合計","物業/廠房/設備總額","累計折舊合計","長期債務","資本租賃債務"]
-    key2_1_list = ["現金","現金和現金等價物","淨應收款合計","預付費用","物業/廠房/設備淨總額","商譽淨額","無形資產淨額","長期投資",
-                   "應收保險","長期應收票據","其他長期資產合計","遞延保單獲得成本","其他資產合計","應付賬款","應付/應計","應計費用",
-                   "保單負債","應付票據/短期債務","長期負債當前應收部分/資本租賃","其他流動負債合計","長期債務合計","遞延所得稅",
-                   "少數股東權益","其他負債合計","可贖回優先股合計","不可贖回優先股淨額","普通股合計","附加資本","保留盈餘(累計虧損)",
-                    "普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計"]
-    key2_2_list = ["物業/廠房/設備總額","累計折舊合計","長期債務","資本租賃債務"]
-    key3_1_list = ["銀行應付現金和欠款","其他盈利資產合計","淨貸款","物業/廠房/設備淨總額","商譽淨額","無形資產淨額","長期投資","其他長期資產合計",
-                   "其他資產合計","應付賬款","應付/應計","應計費用","存款總額","其他付息負債合計","短期借貸總額","長期負債當前應收部分/資本租賃",
-                   "其他流動負債合計","長期債務合計","遞延所得稅","少數股東權益","其他負債合計","可贖回優先股合計","不可贖回優先股淨額","普通股合計",
-                   "附加資本","保留盈餘(累計虧損)","普通庫存股","員工持股計劃債務擔保","未實現收益（虧損）","其他權益合計"]
-    key3_2_list = ["物業/廠房/設備總額","累計折舊合計","長期債務","資本租賃債務"]
-    copy_frame2_1_list = frame2_1_inside_text_list
-    copy_frame2_2_list = frame2_2_inside_text_list
-    copy_frame2_3_list = frame2_3_inside_text_list
-    opt1=tk.IntVar()
-    opt2=tk.IntVar()
+    """ 資產負債表複選單按鈕實例化 """
+    frame2_1_list = FRAME2_1_INSIDE_LIST.copy()
+    frame2_2_list = FRAME2_2_INSIDE_LIST.copy()
+    frame2_3_list = FRAME2_3_INSIDE_LIST.copy()
+    opt1 = tk.IntVar()
+    opt2 = tk.IntVar()
     opt3 = tk.IntVar()
     frame2_inside_1_sall_rbtn = tk.Radiobutton(frame2_inside_1_text, variable=opt1,value=1,text="全選",
                                                command=f2_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
@@ -756,89 +818,99 @@ def frame2_check_btn():
     frame2_inside_2_text.window_create("end", window=frame2_inside_2_dall_rbtn)
     frame2_inside_3_text.window_create("end", window=frame2_inside_3_sall_rbtn)
     frame2_inside_3_text.window_create("end", window=frame2_inside_3_dall_rbtn)
-    for i in range(len(frame2_1_check_btn_list)):
-        if copy_frame2_1_list[0] in key1_1_list:
-            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=copy_frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=copy_frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+    for i in range(len(F2_1_CHECK_BTN_LIST)):
+        if frame2_1_list[0] in F2_1_BLUE_BTN_LIST:
+            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_1_text.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
-        elif copy_frame2_1_list[0] in key1_2_list:
-            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=copy_frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="green",anchor="w",onvalue=copy_frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        elif frame2_1_list[0] in F2_1_GREEN_BTN_LIST:
+            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
+                                                              width=100,bg="white",fg="green",anchor="w",onvalue=frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_1_text.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
         else:
-            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=copy_frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_1_text.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
-        if len(copy_frame2_1_list) >1:
+        if len(frame2_1_list) >1:
             frame2_inside_1_text.insert("end", "\n")
-        copy_frame2_1_list.pop(0)
-    for i in range(len(frame2_2_check_btn_list)):
-        if copy_frame2_2_list[0] in key2_1_list:
-            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=copy_frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=copy_frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        frame2_1_list.pop(0)
+    for i in range(len(F2_2_CHECK_BTN_LIST)):
+        if frame2_2_list[0] in F2_2_BLUE_BTN_LIST:
+            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
-        elif copy_frame2_2_list[0] in key2_2_list:
-            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=copy_frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
-                                                              width=100,bg="white",fg="green",anchor="w",onvalue=copy_frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        elif frame2_2_list[0] in F2_2_GREEN_BTN_LIST:
+            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
+                                                              width=100,bg="white",fg="green",anchor="w",onvalue=frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
         else:
-            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=copy_frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
-        if len(copy_frame2_2_list) >1:
+        if len(frame2_2_list) >1:
             frame2_inside_2_text.insert("end", "\n")
-        copy_frame2_2_list.pop(0)
-    for i in range(len(frame2_3_check_btn_list)):
-        if copy_frame2_3_list[0] in key3_1_list:
-            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=copy_frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=copy_frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        frame2_2_list.pop(0)
+    for i in range(len(F2_3_CHECK_BTN_LIST)):
+        if frame2_3_list[0] in F2_3_BLUE_BTN_LIST:
+            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_3_text.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
-        elif copy_frame2_3_list[0] in key3_2_list:
-            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=copy_frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
-                                                              width=100,bg="white",fg="green",anchor="w",onvalue=copy_frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+        elif frame2_3_list[0] in F2_3_GREEN_BTN_LIST:
+            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
+                                                              width=100,bg="white",fg="green",anchor="w",onvalue=frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_3_text.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
         else:
-            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=copy_frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame2_inside_3_text.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
-        if len(copy_frame2_3_list) >1:
+        if len(frame2_3_list) >1:
             frame2_inside_3_text.insert("end", "\n")
-        copy_frame2_3_list.pop(0)
+        frame2_3_list.pop(0)
     return frame2_inside_1_sall_rbtn,frame2_inside_2_sall_rbtn,frame2_inside_3_sall_rbtn
 
-# 批量建立現金流表複選按鈕
 def frame3_check_btn():
-    key1_list = [ "折舊/遞耗","攤銷","遞延稅","非現金項目","現金收入","現金支出","現金稅金支出","現金利息支出",
-                 "營運資金變動","資本支出","其他投資現金流項目合計","融資現金流項目","發放現金紅利合計",
-                 "股票發行（贖回）淨額","債務發行（贖回）淨額"]
-    copy_frame3_list = frame3_1_inside_text_list
-    opt1=tk.IntVar()
+    """ 現金流量表複選單按鈕實例化 """
+    frame3_list = FRAME3_1_INSIDE_LIST.copy()
+    opt1 = tk.IntVar()
     frame3_inside_1_sall_rbtn = tk.Radiobutton(frame3_inside_1_text, variable=opt1,value=1,text="全選",
                                                command=f3_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
     frame3_inside_1_dall_rbtn = tk.Radiobutton(frame3_inside_1_text, variable=opt1,value=2,text="取消全選",
                                                command=f3_f1_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))  
     frame3_inside_1_text.window_create("end", window=frame3_inside_1_sall_rbtn)
     frame3_inside_1_text.window_create("end", window=frame3_inside_1_dall_rbtn)
-    for i in range(len(frame3_1_check_btn_list)):
-        if copy_frame3_list[0] in key1_list:
-            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=copy_frame3_list[0],var=globals()["f3_in_f1_va"+str(i)],
-                                                              width=25,bg="white",fg="blue",anchor="w",onvalue=copy_frame3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+    # for i in range(len(F3_1_CHECK_BTN_LIST)):
+    #     if frame3_list[0] in F3_1_BLUE_BTN_LIST:
+    #         globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=frame3_list[0],var=globals()["f3_in_f1_va"+str(i)],
+    #                                                           width=100,bg="white",fg="blue",anchor="w",onvalue=frame3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+    #         frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
+
+    #     else:
+    #         globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=frame3_list[0],var=globals()["f3_in_f1_va"+str(i)],
+    #                                                           width=100,bg="white",anchor="w",onvalue=frame3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+    #         frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
+    #     if len(frame3_list) >1:
+    #         frame3_inside_1_text.insert("end", "\n")
+    #     frame3_list.pop(0)
+    for i in range(len(F3_1_CHECK_BTN_LIST)):
+        if FRAME3_1_INSIDE_LIST[0] in F3_1_BLUE_BTN_LIST:
+            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=FRAME3_1_INSIDE_LIST[0],var=globals()["f3_in_f1_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=FRAME3_1_INSIDE_LIST[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
 
         else:
-            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=copy_frame3_list[0],var=globals()["f3_in_f1_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=copy_frame3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
+            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=FRAME3_1_INSIDE_LIST[0],var=globals()["f3_in_f1_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",onvalue=FRAME3_1_INSIDE_LIST[0],offvalue="",font=("microsoft yahei",8,"bold"))
             frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
-        if len(copy_frame3_list) >1:
+        if len(FRAME3_1_INSIDE_LIST) >1:
             frame3_inside_1_text.insert("end", "\n")
-        copy_frame3_list.pop(0)
+        FRAME3_1_INSIDE_LIST.pop(0)
     return frame3_inside_1_sall_rbtn
 
-# 自適應視窗中心
 align_center(window,1000,700)
 window.update_idletasks()
 
-"""instance compoments"""
+"""GUI物件實例化"""
+
 country_lb = tk.Label(window,text="股票代號/國家： ",font=("新細明體",12),anchor="e")
 country_lb.place(relx=0.01,rely=0.05,relwidth=0.15)
 
@@ -879,39 +951,29 @@ stext.place(relx=0.01,rely=0.4,relwidth=0.49,relheight=0.2)
 window_spea = ttk.Separator(window,orient="horizontal")
 window_spea.place(relx=0,rely=0.62,relwidth=1)
 
-samplepath_lb = tk.Label(window,text="合併範例檔案： ",font=("新細明體",12),anchor="e")
-samplepath_lb.place(relx=0.01,rely=0.635,relwidth=0.15)
-
-samplepath_btn = ttk.Button(window,text="選擇檔案",command=samplepath_event)
-samplepath_btn.place(relx=0.16,rely=0.63,relheight=0.05)
-
-samplepath_text = tk.Text(window)
-samplepath_text.config(state="disabled")
-samplepath_text.place(relx=0.03,rely=0.7,relwidth=0.4,relheight=0.04)
-
 downloadpath_lb = tk.Label(window,text="個股下載路徑： ",font=("新細明體",12),anchor="e")
-downloadpath_lb.place(relx=0.01,rely=0.755,relwidth=0.15)
+downloadpath_lb.place(relx=0.01,rely=0.632,relwidth=0.15)
 
-downloadpath_btn = ttk.Button(window,text="選擇路徑",command=downloadpath_event)
-downloadpath_btn.place(relx=0.16,rely=0.75)
+downloadpath_btn = ttk.Button(window,text="選擇路徑",command=singledownload_path_event)
+downloadpath_btn.place(relx=0.16,rely=0.63)
 
 downloadpath_text = tk.Text(window)
 downloadpath_text.config(state="normal")
 downloadpath_text.insert(1.0,"C:/")
 downloadpath_text.config(state="disabled")
-downloadpath_text.place(relx=0.03,rely=0.82,relwidth=0.4,relheight=0.04)
+downloadpath_text.place(relx=0.03,rely=0.7,relwidth=0.4,relheight=0.04)
 
 bulkdownloadpath_lb = tk.Label(window,text="批量下載路徑： ",font=("新細明體",12),anchor="e")
-bulkdownloadpath_lb.place(relx=0.01,rely=0.875,relwidth=0.15)
+bulkdownloadpath_lb.place(relx=0.01,rely=0.755,relwidth=0.15)
 
-bulkdownloadpath_btn = ttk.Button(window,text="選擇路徑",command=downloadpath2_event)
-bulkdownloadpath_btn.place(relx=0.16,rely=0.87)
+bulkdownloadpath_btn = ttk.Button(window,text="選擇路徑",command=bulkdownload_path_event)
+bulkdownloadpath_btn.place(relx=0.16,rely=0.75)
 
 bulkdownloadpath_text = tk.Text(window)
 bulkdownloadpath_text.config(state="normal")
 bulkdownloadpath_text.insert(1.0,"C:/")
 bulkdownloadpath_text.config(state="disabled")
-bulkdownloadpath_text.place(relx=0.03,rely=0.94,relwidth=0.4,relheight=0.04)
+bulkdownloadpath_text.place(relx=0.03,rely=0.82,relwidth=0.4,relheight=0.04)
 
 stocklistpath_lb = tk.Label(window,text="指定清單檔案： ",font=("新細明體",12),anchor="e")
 stocklistpath_lb.place(relx=0.51,rely=0.635,relwidth=0.15)
@@ -941,19 +1003,22 @@ singlecrawler_btn.place(relx=0.83,rely=0.8)
 progress = ttk.Progressbar(window,style="red.Horizontal.TProgressbar",orient="horizontal",mode="determinate")
 progress.place(relx=0.53,rely=0.94,relwidth=0.43)
 
-# window notebook&frame
+""" notebook&frame實例化 """
+
 notebook = ttk.Notebook(window)
 notebook.place(relx=0.5,rely=0,relwidth=0.5,relheight=0.6)
 frame_1 = tk.Frame(notebook)
 frame_2 = tk.Frame(notebook)
 frame_3 = tk.Frame(notebook)
 
-# frame1~4 grid
+""" frame grid設定 """
+
 notebook.add(frame_1,text="損益表",padding=10)
 notebook.add(frame_2,text="資產負債表",padding=10)
 notebook.add(frame_3,text="現金流",padding=10)
 
-# frame1 configure
+""" frame1實例化 """
+
 frame_1_notebook = ttk.Notebook(frame_1)
 frame_1_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
 frame1_inside_1 = tk.Frame(frame_1_notebook)
@@ -983,13 +1048,14 @@ frame1_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame1_inside_3_text.configure(state="disabled")
 frame1_inside_3_scollbar.config(command=frame1_inside_3_text.yview)
 frame1_inside_3_text.config(yscrollcommand=frame1_inside_3_scollbar.set)
-f1_var_name()
+f1_name_initialization()
 frame1_inside_1_sall_rbtn,frame1_inside_2_sall_rbtn,frame1_inside_3_sall_rbtn = frame1_check_btn()
 frame_1_notebook.add(frame1_inside_1,text="一般類別")
 frame_1_notebook.add(frame1_inside_2,text="保險類別")
 frame_1_notebook.add(frame1_inside_3,text="銀行類別")
 
-# frame2 configure
+""" frame2實例化 """
+
 frame_2_notebook = ttk.Notebook(frame_2)
 frame_2_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
 frame2_inside_1 = tk.Frame(frame_2_notebook)
@@ -1019,13 +1085,14 @@ frame2_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame2_inside_3_text.configure(state="disabled")
 frame2_inside_3_scollbar.config(command=frame2_inside_3_text.yview)
 frame2_inside_3_text.config(yscrollcommand=frame2_inside_3_scollbar.set)
-f2_var_name()
+f2_name_initialization()
 frame2_inside_1_sall_rbtn,frame2_inside_2_sall_rbtn,frame2_inside_3_sall_rbtn = frame2_check_btn()
 frame_2_notebook.add(frame2_inside_1,text="一般類別")
 frame_2_notebook.add(frame2_inside_2,text="保險類別")
 frame_2_notebook.add(frame2_inside_3,text="銀行類別")
 
-# frame3 configure
+""" frame3實例化 """
+
 frame_3_notebook = ttk.Notebook(frame_3)
 frame_3_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
 frame3_inside_1 = tk.Frame(frame_3_notebook)
@@ -1037,55 +1104,57 @@ frame3_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
 frame3_inside_1_text.configure(state="disabled")
 frame3_inside_1_scollbar.config(command=frame3_inside_1_text.yview)
 frame3_inside_1_text.config(yscrollcommand=frame3_inside_1_scollbar.set)
-f3_var_name()
+f3_name_initialization()
 frame3_inside_1_sall_rbtn = frame3_check_btn()
 frame_3_notebook.add(frame3_inside_1,text="一般類別")
 
-"""event bind configure"""
+""" 事件綁定 """
+
 start_date_btn.bind("<<DateEntrySelected>>", start_date_btn_event)
-# end_date_btn.bind("<<DateEntrySelected>>", end_date_btn_event)
 country_btn.bind("<<ComboboxSelected>>", country_btn_event)
 country_btn.bind("<Return>",country_btn_enter_event)
 
-"""default checkbox select"""
+"""複選單按鈕實例化"""
+
 f1_1config,f1_2config,f1_3config,f2_1config,f2_2config,f2_3config,f3config = get_checkboxconfig()
-for i in range(len(frame1_1_check_btn_list)):
+for i in range(len(F1_1_CHECK_BTN_LIST)):
     if f1_1config[i]:
         globals()["f1_in_f1_btn"+str(i)].select()
     else:
         globals()["f1_in_f1_btn"+str(i)].deselect()
-for i in range(len(frame1_2_check_btn_list)):
+for i in range(len(F1_2_CHECK_BTN_LIST)):
     if f1_2config[i]:
         globals()["f1_in_f2_btn"+str(i)].select()
     else:
         globals()["f1_in_f2_btn"+str(i)].deselect()
-for i in range(len(frame1_3_check_btn_list)):
+for i in range(len(F1_3_CHECK_BTN_LIST)):
     if f1_3config[i]:
         globals()["f1_in_f3_btn"+str(i)].select()
     else:
         globals()["f1_in_f3_btn"+str(i)].deselect()
-for i in range(len(frame2_1_check_btn_list)):
+for i in range(len(F2_1_CHECK_BTN_LIST)):
     if f2_1config[i]:
         globals()["f2_in_f1_btn"+str(i)].select()
     else:
         globals()["f2_in_f1_btn"+str(i)].deselect()
-for i in range(len(frame2_2_check_btn_list)):
+for i in range(len(F2_2_CHECK_BTN_LIST)):
     if f2_2config[i]:
         globals()["f2_in_f2_btn"+str(i)].select()
     else:
         globals()["f2_in_f2_btn"+str(i)].deselect()
-for i in range(len(frame2_3_check_btn_list)):
+for i in range(len(F2_3_CHECK_BTN_LIST)):
     if f2_3config[i]:
         globals()["f2_in_f3_btn"+str(i)].select()
     else:
         globals()["f2_in_f3_btn"+str(i)].deselect()
-for i in range(len(frame3_1_check_btn_list)):
+for i in range(len(F3_1_CHECK_BTN_LIST)):
     if f3config[i]:
         globals()["f3_in_f1_btn"+str(i)].select()
     else:
         globals()["f3_in_f1_btn"+str(i)].deselect()
 
-"""default radiobox select"""
+"""複選單按鈕預設全選"""
+
 frame1_inside_1_sall_rbtn.select()
 frame1_inside_2_sall_rbtn.select()
 frame1_inside_3_sall_rbtn.select()
@@ -1094,7 +1163,8 @@ frame2_inside_2_sall_rbtn.select()
 frame2_inside_3_sall_rbtn.select()
 frame3_inside_1_sall_rbtn.select()
 
-"""get path temp"""
+""" 讀取存檔的變數設定 """
+
 single,bulk = get_pathconfig()
 downloadpath_text.config(state="normal")
 downloadpath_text.delete(1.0,"end")

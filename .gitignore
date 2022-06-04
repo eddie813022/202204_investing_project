@@ -1,3 +1,9 @@
+# customer
+*.xlsx
+一般業
+保險業
+銀行業
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

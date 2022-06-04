@@ -15,7 +15,7 @@ import investpy
     #     print(i["name"])
 # {'country': 'taiwan', 'name': 'MetaTech AP', 'full_name': 'MetaTech AP', 'isin': 'TW0003224002', 'currency': 'TWD', 'symbol': '3224'}
 # 歷史紀錄
-# df = investpy.get_stock_historical_data(stock='2317', 
+# df = investpy.get_stock_historical_data(stock='2317',
 #                                         country='taiwan',
 #                                         from_date='01/01/2017',
 #                                         to_date='01/01/2022',
@@ -36,7 +36,7 @@ import investpy
 #                                        countries=['taiwan'], n_results=1)
 # print(df.retrieve_technical_indicators())
 # df.to_excel("history2.xlsx")
- 
+
 
 
 

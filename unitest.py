@@ -19,11 +19,8 @@ import random
 user_agent = UserAgent()
 headers = {'User-Agent': user_agent.random}
 
-
-
-"""股息URL測試"""
-
-def get_dividend(url):
+def get_dividend(url,pair_id):
+    """股息URL測試"""
     if "?cid=" in url:
         f_index = url.find("?cid=")
         l_index = url[f_index:]
@@ -40,36 +37,51 @@ def get_dividend(url):
     df = pd.read_html(str(xml))
     for i in df:
         if "除息日" in i.columns:
-            # if "除息日" in str(i.columns[0]):
             finaldf = i
-    frame_to_rows = list(dataframe_to_rows(finaldf, index=False, header=False))
-    print(frame_to_rows)
+    dividend_list = list(dataframe_to_rows(finaldf, index=False, header=False))
+    if dividend_list:
+        last_timestamp = xml.find_all("td",class_="left first")[-1].attrs["data-value"]
+        while True:
+            tr_list, last_timestamp = get_more_dividend(pair_id=pair_id,last_timestamp=last_timestamp)
+            if tr_list:
+                for i in tr_list:
+                    all_ele = i.contents
+                    date1 = all_ele[1].text
+                    date1_value = all_ele[3].text
+                    date2 = all_ele[7].text
+                    date2_value = all_ele[9].text
+                    append_list = [ date1,date1_value,"",date2,date2_value]
+                    dividend_list.append(append_list)
+                sleep(0.5)
+            else:
+                break
+    return dividend_list
 
-def get_more_dividend(pair_id):
+def get_more_dividend(pair_id,last_timestamp):
     url = "https://hk.investing.com/equities/MoreDividendsHistory"
-    stock_data = { "pairID": pair_id, "last_timestamp": 1309910400 }
+    stock_data = { "pairID": pair_id, "last_timestamp": last_timestamp }
     headers = { "User-Agent": user_agent.random,
                 "x-requested-with": "XMLHttpRequest" }
     res = requests.post(url, headers=headers, data=stock_data)
     res.encoding = "UTF-8"
     history_row = res.json()["historyRows"]
     xml = BeautifulSoup(history_row, "html.parser")
-    print(xml)
-    # date_ = xml.find_all("td", class_="left first")
-    # date = [ i.text for i in date_ ]
-    # print(date)
+    try:
+        tr_list= xml.find_all("tr")
+        last_timestamp = tr_list[-1].find("td",class_="left first").attrs["data-value"]
+    except:
+        tr_list= ""
+        last_timestamp = ""
+    return tr_list,last_timestamp
 
-# 1498608000
-# 1309910400 = 188,697,600
-# 1121731200 = 188,179,200
-# 1000000000
+# response = get_more_dividend(pair_id="103731",last_timestamp=1468368000)
+# print(response)
 
-# 1502409600
-# 1313107200
+# print(get_dividend(url="https://hk.investing.com/equities/formosa-plasti",pair_id="103008"))
 
+profitloss = 0
 
 
-# url = "https://hk.investing.com/equities/formosa-petro"
-# response =get_dividend(url=url)
-response = get_more_dividend(pair_id="103588")
-# 103731
+
+
+
