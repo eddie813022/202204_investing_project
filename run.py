@@ -1,12 +1,14 @@
 
 # -*- coding:utf-8 -*-
-from tkinter import ttk,filedialog
+from configparser import NoOptionError
+from tkinter import ttk, filedialog
 from tkinter.scrolledtext import ScrolledText
 from tkcalendar import DateEntry
 from pathlib import Path
 from openpyxl import load_workbook
+from typing import Callable, Any
 from icon import img
-# import babel.numbers
+import babel.numbers # pyinstaller生成tkinter時的依賴套件
 import tkinter as tk
 import threading
 import base64
@@ -49,10 +51,10 @@ os.remove("tmp.ico")
 
 stop_threads = False
 country_dict = get_country_dict()
-country_list = [ i for i in country_dict.keys() ]
+country_list: list[dict[str, str]] = [ i for i in country_dict.keys() ]
 country_list.insert(0,"")
-search_list= []
-market_list = []
+search_list: list[str] = []
+market_list: list[dict] = []
 CATEGORY_LIST = [ {'所有板塊': '-1'}, {'消费类（非周期性）': '8'}, {'交通运输': '10'}, {'公用事业': '22'},
                  {'医疗保健': '18'}, {'基础材料': '7'}, {'工業': '15'}, {'房地產': '23'}, {'服务': '2'},
                  {'材料': '14'}, {'消費者日常用品': '17'}, {'消费类（周期性）': '3'}, {'生产资料': '5'},
@@ -161,144 +163,144 @@ F2_3_CHECK_BTN_LIST = [ "f2_3_check_btn" +str(x+1) for x in range(0,42) ]
 F3_1_CHECK_BTN_LIST = [ "f3_1_check_btn" +str(x+1) for x in range(0,26) ]
 
 
-def country_select_event():
+def country_select_event() -> None:
     """ 國家選單點擊事件  """
     global market_list
-    country_name = country_btn.get()
+    country_name = COUNTRY_BTN.get()
     if country_name:
         if country_name in country_list:
             country_code = country_dict[country_name]
-            stext.config(state="normal")
-            stext.insert(tk.END,"=====================================\n")
-            stext.insert(tk.END,"正在查詢"+country_name+"交易所數量..\n")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.insert(tk.END, "正在查詢"+country_name+"交易所數量..\n")
             exchange_dict = get_exchang_dict({country_name:country_code})
-            market_btn.set("") # 將選項清空
+            MARKET_BTN.set("") # 將選項清空
             market_list = exchange_dict
             market_name_list = [ i for i in market_list ]
-            market_btn["value"] = market_name_list
-            market_btn.current(0)
-            category_name_list = [ j for i in CATEGORY_LIST for j,k in i.items() ]
-            category_btn["value"] = category_name_list
-            category_btn.current(0)
-            stext.insert(tk.END,country_name+"共有"+str(len(market_list)-1)+"筆交易所.\n")
-            stext.insert(tk.END,"=====================================\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
+            MARKET_BTN["value"] = market_name_list
+            MARKET_BTN.current(0)
+            category_name_list = [ j for i in CATEGORY_LIST for j, k in i.items() ]
+            CATEGORY_BTN["value"] = category_name_list
+            CATEGORY_BTN.current(0)
+            STEXT.insert(tk.END, country_name+"共有"+str(len(market_list)-1)+"筆交易所.\n")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
         else:
-            stext.config(state="normal")
-            stext.insert(tk.END,"未正確選擇國家\n")
-            stext.insert(tk.END,"=====================================\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, "未正確選擇國家\n")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
 
-def country_enter_envet():
+def country_enter_envet() -> None:
     """ 個股輸入欄ENTER事件 """
     global search_list
     if search_list:
         search_list.clear()
-    word = country_btn.get()
+    word = COUNTRY_BTN.get()
     search_list = get_keypoint_stocklist(word)
     if search_list:
         for i in search_list:
-            stext.config(state="normal")
-            stext.insert(tk.END,i[0]+"\n")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, i[0]+"\n")
             if i != search_list[-1]:
-                stext.insert(tk.END,"-------------------------------------\n")
-            stext.see(tk.END)
-        stext.insert(tk.END,"=====================================\n")
-        stext.config(state="disable")
+                STEXT.insert(tk.END, "-------------------------------------\n")
+            STEXT.see(tk.END)
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.config(state="disable")
 
-def country_btn_event(event):
+def country_btn_event(event: Callable) -> None:
     """ 國家選單線呈事件觸發 """
     country_btn_td = threading.Thread(target=country_select_event)
     country_btn_td.setDaemon(True)
     country_btn_td.start()
 
-def country_btn_enter_event(event):
+def country_btn_enter_event(event: Callable) -> None:
     """ 個股輸入欄ENTER線呈事件觸發 """
     country_select_td = threading.Thread(target=country_enter_envet)
     country_select_td.setDaemon(True)
     country_select_td.start()
 
-def single_loading_event(num):
+def single_loading_event(num: int) -> None:
     """ 個股讀取條事件 """
-    progress["value"] = 0
+    PROGRESS["value"] = 0
     if num == 16:
         timer = 6.5
     elif num == 14:
         timer = 7
     for i in range(num):
-        if progress["value"] < progress["maximum"]:
-            progress["value"] += timer
+        if PROGRESS["value"] < PROGRESS["maximum"]:
+            PROGRESS["value"] += timer
             window.update()
             time.sleep(1)
-    progress["value"] = 100
+    PROGRESS["value"] = 100
     window.update()
 
-def bulk_loading_event(num):
+def bulk_loading_event(num: int) -> None:
     """ 批量個股讀取條事件 """
     if num < 100:
         addnum = int(100 / num)
-        while progress["value"] < progress["maximum"]:
-            progress["value"] += addnum
+        while PROGRESS["value"] < PROGRESS["maximum"]:
+            PROGRESS["value"] += addnum
             window.update()
             time.sleep(16)
             if stop_threads:
-                progress["value"] = 100
+                PROGRESS["value"] = 100
                 break
     elif num > 100:
         addnum = int(num / 100)
-        while progress["value"] < progress["maximum"]:
-            progress["value"] += 1
+        while PROGRESS["value"] < PROGRESS["maximum"]:
+            PROGRESS["value"] += 1
             window.update()
             time.sleep(addnum*16)
             if stop_threads:
-                progress["value"] = 100
+                PROGRESS["value"] = 100
                 break
-    progress["value"] = 100
+    PROGRESS["value"] = 100
     window.update()
 
-def start_date_btn_event(event):
+def start_date_btn_event(event: Callable) -> None:
     """ 開始日期點擊事件 """
-    date_ = start_date_btn.get()
+    date_ = START_DATE_BTN.get()
     write_dateconfig(date_)
 
-def singlecrawler_btn_event():
+def singlecrawler_btn_event() -> None:
     """ 個股下載線呈事件 """
     single_btn_td = threading.Thread(target=singledownload_event)
     single_btn_td.setDaemon(True)
     single_btn_td.start()
 
-def bulkcrawler_btn_event():
+def bulkcrawler_btn_event() -> None:
     """ 批量下載線呈事件 """
     bulk_btn_td = threading.Thread(target=bulkdownload_event)
     bulk_btn_td.setDaemon(True)
     bulk_btn_td.start()
 
-def crawlerstocklist_btn_event():
+def crawlerstocklist_btn_event() -> None:
     """ 個股清單下載線呈事件 """
     stocklist_btn_td = threading.Thread(target=crawlerstocklist_event)
     stocklist_btn_td.setDaemon(True)
     stocklist_btn_td.start()
 
-def stopcrawler_btn_event():
+def stopcrawler_btn_event() -> None:
     """ 暫停下載線呈事件 """
     stop_btn_td =threading.Thread(target=stopcrawler_event)
     stop_btn_td.setDaemon(True)
     stop_btn_td.start()
 
-def crawlerstocklist_event():
+def crawlerstocklist_event() -> None:
     """ 個股清單下載點擊事件 """
-    progress["value"] = 0
-    stocktimer_lb.place_forget()
-    crawlerstocklist_btn.config(state="disable")
-    bulkcrawler_btn.config(state="disable")
-    bulk_start_btn.config(state="disable")
-    singlecrawler_btn.config(state="disable")
-    download_path = Path(downloadpath_text.get("1.0","end-1c"))
-    country_name = country_btn.get()
-    exchange_name = market_btn.get()
-    category_name = category_btn.get()
+    PROGRESS["value"] = 0
+    STOCK_TIMER_LB.place_forget()
+    CRAWLER_STOCK_LIST_BTN.config(state="disable")
+    BULK_CRAWLER_BTN.config(state="disable")
+    BULK_START_BTN.config(state="disable")
+    SINGLE_CRAWLER_BTN.config(state="disable")
+    download_path = Path(DOWNLOAD_PATH_TEXT.get("1.0","end-1c"))
+    country_name = COUNTRY_BTN.get()
+    exchange_name = MARKET_BTN.get()
+    category_name = CATEGORY_BTN.get()
     prefilename1 =  country_name+"-"+exchange_name+"-"+category_name+".xlsx"
     prefilename2 = country_name+"-"+exchange_name+".xlsx"
     prefilename3 = country_name+".xlsx"
@@ -311,12 +313,12 @@ def crawlerstocklist_event():
     try:
         country_code = country_dict[country_name]
     except:
-        stext.config(state="normal")
-        stext.insert(tk.END,"=====================================\n")
-        stext.insert(tk.END,"請先選取國家及交易所.\n")
-        stext.insert(tk.END,"=====================================\n")
-        stext.see(tk.END)
-        stext.config(state="disable")
+        STEXT.config(state="normal")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.insert(tk.END, "請先選取國家及交易所.\n")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.see(tk.END)
+        STEXT.config(state="disable")
         country_code = ""
     if market_list:
         try:
@@ -342,41 +344,41 @@ def crawlerstocklist_event():
                     "ecode":exchange_code,
                     "gname":category_name,
                     "gcode":category_code,
-                    "progress":progress,
+                    "PROGRESS":PROGRESS,
                     "save":save_name}
-        stext.config(state="normal")
-        stext.insert(tk.END,"=====================================\n")
-        stext.insert(tk.END,f"正在進行{country_name}-{exchange_name}-{category_name}個股清單抓取.\n")
-        stext.see(tk.END)
-        stext.config(state="disable")
+        STEXT.config(state="normal")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.insert(tk.END, f"正在進行{country_name}-{exchange_name}-{category_name}個股清單抓取.\n")
+        STEXT.see(tk.END)
+        STEXT.config(state="disable")
         stock_totalcount = str(get_stock_list(**stock_data))
         if int(stock_totalcount) <1:
-            stext.config(state="normal")
-            stext.insert(tk.END,f"{country_name}-{exchange_name}-{category_name}查無個股資料.\n")
-            stext.insert(tk.END,"=====================================\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, f"{country_name}-{exchange_name}-{category_name}查無個股資料.\n")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
         else:
-            stext.config(state="normal")
-            stext.insert(tk.END,f"完成{country_name}-{exchange_name}-{category_name}個股清單抓取({stock_totalcount}).\n")
-            stext.insert(tk.END,"=====================================\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, f"完成{country_name}-{exchange_name}-{category_name}個股清單抓取({stock_totalcount}).\n")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
     else:
-        progress["value"] = 100
-    crawlerstocklist_btn.config(state="normal")
-    bulkcrawler_btn.config(state="normal")
-    bulk_start_btn.config(state="normal")
-    singlecrawler_btn.config(state="normal")
+        PROGRESS["value"] = 100
+    CRAWLER_STOCK_LIST_BTN.config(state="normal")
+    BULK_CRAWLER_BTN.config(state="normal")
+    BULK_START_BTN.config(state="normal")
+    SINGLE_CRAWLER_BTN.config(state="normal")
 
-def singledownload_event():
-    stocktimer_lb.place_forget()
-    progress["value"] = 0
+def singledownload_event() -> None:
+    STOCK_TIMER_LB.place_forget()
+    PROGRESS["value"] = 0
     entertext = ""
-    crawlerstocklist_btn.config(state="disable")
-    bulkcrawler_btn.config(state="disable")
-    bulk_start_btn.config(state="disable")
-    singlecrawler_btn.config(state="disable")
+    CRAWLER_STOCK_LIST_BTN.config(state="disable")
+    BULK_CRAWLER_BTN.config(state="disable")
+    BULK_START_BTN.config(state="disable")
+    SINGLE_CRAWLER_BTN.config(state="disable")
     start = time.perf_counter()
     tempfile = Path.cwd() / "temp.xlsx"
     checkwb = load_workbook(tempfile)
@@ -389,40 +391,40 @@ def singledownload_event():
         f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(F2_2_VAR_NAME_lIST)) ]
         f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(F2_3_VAR_NAME_lIST)) ]
         f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(F3_1_VAR_NAME_lIST)) ]
-        download_path = Path(downloadpath_text.get("1.0","end-1c"))
-        start_date = start_date_btn.get()
-        end_date = end_date_btn.get()
+        download_path = Path(DOWNLOAD_PATH_TEXT.get("1.0","end-1c"))
+        start_date = START_DATE_BTN.get()
+        end_date = END_DATE_BTN.get()
         for i in range(2,35):
-            checkws.cell(row=i,column=2,value=f1general_choose_list[i-2])
+            checkws.cell(row=i, column=2, value=f1general_choose_list[i-2])
         for i in range(35,69):
-            checkws.cell(row=i,column=2,value=f1finance_choose_list[i-35])
+            checkws.cell(row=i, column=2, value=f1finance_choose_list[i-35])
         for i in range(69,93):
-            checkws.cell(row=i,column=2,value=f1finance2_choose_list[i-69])
+            checkws.cell(row=i, column=2, value=f1finance2_choose_list[i-69])
         for i in range(93,140):
-            checkws.cell(row=i,column=2,value=f2general_choose_list[i-93])
+            checkws.cell(row=i, column=2, value=f2general_choose_list[i-93])
         for i in range(140,185):
-            checkws.cell(row=i,column=2,value=f2finance_choose_list[i-140])
+            checkws.cell(row=i, column=2, value=f2finance_choose_list[i-140])
         for i in range(185,227):
-            checkws.cell(row=i,column=2,value=f2finance2_choose_list[i-185])
+            checkws.cell(row=i, column=2, value=f2finance2_choose_list[i-185])
         for i in range(227,253):
-            checkws.cell(row=i,column=2,value=f3general_choose_list[i-227])
+            checkws.cell(row=i, column=2, value=f3general_choose_list[i-227])
         checkwb.save(tempfile)
-        entertext = stext.selection_get()
+        entertext = STEXT.selection_get()
     except:
-        stext.config(state="normal")
-        stext.insert(tk.END,"=====================================\n")
-        stext.insert(tk.END,"請輸入個股關鍵字或代號查詢並選取\n")
-        stext.insert(tk.END,"=====================================\n")
-        stext.see(tk.END)
-        stext.config(state="disable")
+        STEXT.config(state="normal")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.insert(tk.END, "請輸入個股關鍵字或代號查詢並選取\n")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.see(tk.END)
+        STEXT.config(state="disable")
     if entertext:
         if entertext in country_list:
-            stext.config(state="normal")
-            stext.insert(tk.END,"請先輸入個股關鍵字或代號查詢並選取\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, "請先輸入個股關鍵字或代號查詢並選取\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
         elif entertext in [ i[0] for i in search_list ]:
-            progres_td = threading.Thread(target=single_loading_event,args=(16,))
+            progres_td = threading.Thread(target=single_loading_event, args=(16, ))
             progres_td.setDaemon(True)
             progres_td.start()
             folder1 = download_path / "一般業"
@@ -434,47 +436,49 @@ def singledownload_event():
             for i in search_list:
                 if entertext == i[0]:
                     print(i[0])
-                    stext.config(state="normal")
-                    stext.insert(tk.END,"=====================================\n")
-                    stext.insert(tk.END, f"開始抓取({entertext})個股.\n")
-                    stext.insert(tk.END,"=====================================\n")
-                    stext.see(tk.END)
-                    stext.config(state="disable")
-                    create_stockdata(i=i,sdate=start_date,edate=end_date,f1_1_list=f1general_choose_list,f1_2_list=f1finance_choose_list,
-                                    f1_3_list=f1finance2_choose_list,f2_1_list=f2general_choose_list,f2_2_list=f2finance_choose_list,
-                                    f2_3_list=f2finance2_choose_list,f3_1_list=f3general_choose_list,download_path=download_path)
-                    stext.config(state="normal")
-                    stext.insert(tk.END,"=====================================\n")
-                    stext.insert(tk.END,f"完成抓取{entertext}個股.\n")
-                    stext.insert(tk.END,"=====================================\n")
-                    stext.see(tk.END)
-                    stext.config(state="disable")
+                    STEXT.config(state="normal")
+                    STEXT.insert(tk.END, "=====================================\n")
+                    STEXT.insert(tk.END, f"開始抓取({entertext})個股.\n")
+                    STEXT.insert(tk.END, "=====================================\n")
+                    STEXT.see(tk.END)
+                    STEXT.config(state="disable")
+                    create_stockdata(i=i, sdate=start_date, edate=end_date, f1_1_list=f1general_choose_list,
+                                     f1_2_list=f1finance_choose_list, f1_3_list=f1finance2_choose_list,
+                                     f2_1_list=f2general_choose_list, f2_2_list=f2finance_choose_list,
+                                     f2_3_list=f2finance2_choose_list, f3_1_list=f3general_choose_list,
+                                     download_path=download_path)
+                    STEXT.config(state="normal")
+                    STEXT.insert(tk.END, "=====================================\n")
+                    STEXT.insert(tk.END, f"完成抓取{entertext}個股.\n")
+                    STEXT.insert(tk.END, "=====================================\n")
+                    STEXT.see(tk.END)
+                    STEXT.config(state="disable")
     else:
-        progress["value"] = 100
+        PROGRESS["value"] = 100
     print(f"Cost: {time.perf_counter() - start}")
-    crawlerstocklist_btn.config(state="normal")
-    bulkcrawler_btn.config(state="normal")
-    bulk_start_btn.config(state="normal")
-    singlecrawler_btn.config(state="normal")
+    CRAWLER_STOCK_LIST_BTN.config(state="normal")
+    BULK_CRAWLER_BTN.config(state="normal")
+    BULK_START_BTN.config(state="normal")
+    SINGLE_CRAWLER_BTN.config(state="normal")
 
-def bulkdownload_event():
+def bulkdownload_event() -> None:
     """ 批量下載點擊事件 """
     global stop_threads
     stop_threads = False
-    progress["value"] = 0
+    PROGRESS["value"] = 0
     tempfile = Path.cwd() / "temp.xlsx"
     checkwb = load_workbook(tempfile)
     checkws = checkwb.active
     try:
-        stock_path = Path(stocklistpath_text.get("1.0","end-1c"))
+        stock_path = Path(STOCK_LIST_PATH_TEXT.get("1.0", "end-1c"))
     except:
-        progress["value"] = 100
-        stext.config(state="normal")
-        stext.insert(tk.END,"=====================================\n")
-        stext.insert(tk.END,"請先指定個股清單.\n")
-        stext.insert(tk.END,"=====================================\n")
-        stext.see(tk.END)
-        stext.config(state="disable")
+        PROGRESS["value"] = 100
+        STEXT.config(state="normal")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.insert(tk.END, "請先指定個股清單.\n")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.see(tk.END)
+        STEXT.config(state="disable")
     try:
         wb = load_workbook(stock_path)
         ws = wb.active
@@ -485,23 +489,23 @@ def bulkdownload_event():
         f2finance_choose_list = [ globals()["f2_in_f2_va"+str(i)].get() for i in range(len(F2_2_VAR_NAME_lIST)) ]
         f2finance2_choose_list = [ globals()["f2_in_f3_va"+str(i)].get() for i in range(len(F2_3_VAR_NAME_lIST)) ]
         f3general_choose_list = [ globals()["f3_in_f1_va"+str(i)].get() for i in range(len(F3_1_VAR_NAME_lIST)) ]
-        download_path = Path(bulkdownloadpath_text.get("1.0","end-1c"))
-        start_date = start_date_btn.get()
-        end_date = end_date_btn.get()
+        download_path = Path(BULK_DOWNLOAD_PATH_TEXT.get("1.0", "end-1c"))
+        start_date = START_DATE_BTN.get()
+        end_date = END_DATE_BTN.get()
         for i in range(2,35):
-            checkws.cell(row=i,column=2,value=f1general_choose_list[i-2])
+            checkws.cell(row=i, column=2, value=f1general_choose_list[i-2])
         for i in range(35,69):
-            checkws.cell(row=i,column=2,value=f1finance_choose_list[i-35])
+            checkws.cell(row=i, column=2, value=f1finance_choose_list[i-35])
         for i in range(69,93):
-            checkws.cell(row=i,column=2,value=f1finance2_choose_list[i-69])
+            checkws.cell(row=i, column=2, value=f1finance2_choose_list[i-69])
         for i in range(93,140):
-            checkws.cell(row=i,column=2,value=f2general_choose_list[i-93])
+            checkws.cell(row=i, column=2, value=f2general_choose_list[i-93])
         for i in range(140,185):
-            checkws.cell(row=i,column=2,value=f2finance_choose_list[i-140])
+            checkws.cell(row=i, column=2, value=f2finance_choose_list[i-140])
         for i in range(185,227):
-            checkws.cell(row=i,column=2,value=f2finance2_choose_list[i-185])
+            checkws.cell(row=i, column=2, value=f2finance2_choose_list[i-185])
         for i in range(227,253):
-            checkws.cell(row=i,column=2,value=f3general_choose_list[i-227])
+            checkws.cell(row=i, column=2, value=f3general_choose_list[i-227])
         checkwb.save(tempfile)
         last_index = int(read_stock_list(stock_path))
         if last_index:
@@ -517,195 +521,197 @@ def bulkdownload_event():
             finaltime = nowtime + counter_time
             time_struct = time.localtime(finaltime) # 時間元組
             time_string = time.strftime("%Y-%m-%d %H:%M", time_struct) # 字串
-            stocktimer_lb.configure(text=time_string)
-            stocktimer_lb.place(relx=0.53,rely=0.88)
-            stext.config(state="normal")
-            stext.insert(tk.END,"=====================================\n")
-            stext.insert(tk.END,f"預計完成時間為{time_string}.\n")
-            stext.insert(tk.END,"=====================================\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
-            progres_bk = threading.Thread(target=bulk_loading_event,args=(counter_num,))
+            STOCK_TIMER_LB.configure(text=time_string)
+            STOCK_TIMER_LB.place(relx=0.53, rely=0.88)
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.insert(tk.END, f"預計完成時間為{time_string}.\n")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
+            progres_bk = threading.Thread(target=bulk_loading_event, args=(counter_num,))
             progres_bk.setDaemon(True)
             progres_bk.start()
-            for i in range(last_index,ws.max_row+1):
-                name = ws.cell(row=last_index,column=1).value
-                link = ws.cell(row=last_index,column=2).value
-                id = ws.cell(row=last_index,column=3).value
-                irow = (name,link,id)
-                stext.config(state="normal")
-                stext.insert(tk.END,"=====================================\n")
-                stext.insert(tk.END, f"開始抓取第{last_index}個，({name})個股.\n")
-                stext.see(tk.END)
-                stext.config(state="disable")
-                create_stockdata(i=irow,sdate=start_date,edate=end_date,f1_1_list=f1general_choose_list,f1_2_list=f1finance_choose_list,
-                                f1_3_list=f1finance2_choose_list,f2_1_list=f2general_choose_list,f2_2_list=f2finance_choose_list,
-                                f2_3_list=f2finance2_choose_list,f3_1_list=f3general_choose_list,download_path=download_path)
+            for i in range(last_index, ws.max_row+1):
+                name = ws.cell(row=last_index, column=1).value
+                link = ws.cell(row=last_index, column=2).value
+                id = ws.cell(row=last_index, column=3).value
+                irow = (name, link, id)
+                STEXT.config(state="normal")
+                STEXT.insert(tk.END, "=====================================\n")
+                STEXT.insert(tk.END, f"開始抓取第{last_index}個，({name})個股.\n")
+                STEXT.see(tk.END)
+                STEXT.config(state="disable")
+                create_stockdata(i=irow, sdate=start_date, edate=end_date, f1_1_list=f1general_choose_list,
+                                 f1_2_list=f1finance_choose_list, f1_3_list=f1finance2_choose_list,
+                                 f2_1_list=f2general_choose_list, f2_2_list=f2finance_choose_list,
+                                 f2_3_list=f2finance2_choose_list, f3_1_list=f3general_choose_list,
+                                 download_path=download_path)
                 if stop_threads:
-                    ws.cell(row=last_index,column=4,value="finished")
-                    stext.config(state="normal")
-                    stext.insert(tk.END,"=====================================\n")
-                    stext.insert(tk.END, f"暫停至第{last_index}個，({name})個股抓取.\n")
-                    stext.insert(tk.END,"=====================================\n")
-                    stext.see(tk.END)
-                    stext.config(state="disable")
+                    ws.cell(row=last_index, column=4, value="finished")
+                    STEXT.config(state="normal")
+                    STEXT.insert(tk.END, "=====================================\n")
+                    STEXT.insert(tk.END, f"暫停至第{last_index}個，({name})個股抓取.\n")
+                    STEXT.insert(tk.END, "=====================================\n")
+                    STEXT.see(tk.END)
+                    STEXT.config(state="disable")
                     last_index += 1
                     wb.save(stock_path)
-                    stocktimer_lb.place_forget()
+                    STOCK_TIMER_LB.place_forget()
                     break
-                ws.cell(row=last_index,column=4,value="finished")
-                stext.config(state="normal")
-                stext.insert(tk.END, f"完成抓取第{last_index}個，({name})個股.\n")
-                stext.insert(tk.END,"=====================================\n")
-                stext.see(tk.END)
-                stext.config(state="disable")
+                ws.cell(row=last_index, column=4, value="finished")
+                STEXT.config(state="normal")
+                STEXT.insert(tk.END, f"完成抓取第{last_index}個，({name})個股.\n")
+                STEXT.insert(tk.END, "=====================================\n")
+                STEXT.see(tk.END)
+                STEXT.config(state="disable")
                 last_index += 1
             wb.save(stock_path)
-            progress["value"] = 100
+            PROGRESS["value"] = 100
         else:
-            stext.config(state="normal")
-            stext.insert(tk.END,"=====================================\n")
-            stext.insert(tk.END,"該個股清單已抓取完成.\n")
-            stext.insert(tk.END,"=====================================\n")
-            stext.see(tk.END)
-            stext.config(state="disable")
+            STEXT.config(state="normal")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.insert(tk.END, "該個股清單已抓取完成.\n")
+            STEXT.insert(tk.END, "=====================================\n")
+            STEXT.see(tk.END)
+            STEXT.config(state="disable")
             wb.save(stock_path)
-            progress["value"] = 100
+            PROGRESS["value"] = 100
     except Exception as e:
         print(e)
-        stext.config(state="normal")
-        stext.insert(tk.END,"=====================================\n")
-        stext.insert(tk.END,"請指定正確個股清單.\n")
-        stext.insert(tk.END,"=====================================\n")
-        stext.see(tk.END)
-        stext.config(state="disable")
+        STEXT.config(state="normal")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.insert(tk.END, "請指定正確個股清單.\n")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.see(tk.END)
+        STEXT.config(state="disable")
         wb.save(stock_path)
-    progress["value"] = 100
+    PROGRESS["value"] = 100
 
-def stopcrawler_event():
+def stopcrawler_event() -> None:
     """ 暫停下載點擊事件 """
     global stop_threads
-    progress["value"] = 0
-    stocktimer_lb.place_forget()
+    PROGRESS["value"] = 0
+    STOCK_TIMER_LB.place_forget()
     if stop_threads:
-        stext.config(state="normal")
-        stext.insert(tk.END,"=====================================\n")
-        stext.insert(tk.END,"目前並無任務執行中.\n")
-        stext.insert(tk.END,"=====================================\n")
-        stext.see(tk.END)
-        stext.config(state="disable")
+        STEXT.config(state="normal")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.insert(tk.END, "目前並無任務執行中.\n")
+        STEXT.insert(tk.END, "=====================================\n")
+        STEXT.see(tk.END)
+        STEXT.config(state="disable")
     stop_threads = True
-    progress["value"] = 100
+    PROGRESS["value"] = 100
     print("kill successful")
 
-def align_center(root, width, height):
+def align_center(root: Any, width: int, height: int) -> None:
     """ GUI視窗設定 """
     screenwidth = root.winfo_screenwidth()
     screenheight = root.winfo_screenheight()
     size = '%dx%d+%d+%d' % (width, height, (screenwidth - width)/2, (screenheight - height)/2)
     root.geometry(size)
 
-def f1_f1_selectall_event():
+def f1_f1_selectall_event() -> None:
     """ 損益表，一般類別全選點擊事件 """
     for i in range(len(F1_1_CHECK_BTN_LIST)):
         globals()["f1_in_f1_btn"+str(i)].select()
 
-def f1_f1_dselectall_event():
+def f1_f1_dselectall_event() -> None:
     """ 損益表，一般類別取消全選點擊事件 """
     for i in range(len(F1_1_CHECK_BTN_LIST)):
         globals()["f1_in_f1_btn"+str(i)].deselect()
 
-def f1_f2_selectall_event():
+def f1_f2_selectall_event() -> None:
     """ 損益表，保險類別全選點擊事件 """
     for i in range(len(F1_2_CHECK_BTN_LIST)):
         globals()["f1_in_f2_btn"+str(i)].select()
 
-def f1_f2_dselectall_event():
+def f1_f2_dselectall_event() -> None:
     """ 損益表，保險類別取消全選點擊事件 """
     for i in range(len(F1_2_CHECK_BTN_LIST)):
         globals()["f1_in_f2_btn"+str(i)].deselect()
 
-def f1_f3_selectall_event():
+def f1_f3_selectall_event() -> None:
     """ 損益表，銀行類別全選點擊事件 """
     for i in range(len(F1_3_CHECK_BTN_LIST)):
         globals()["f1_in_f3_btn"+str(i)].select()
 
-def f1_f3_dselectall_event():
+def f1_f3_dselectall_event() -> None:
     """ 損益表，銀行類別取消全選點擊事件 """
     for i in range(len(F1_3_CHECK_BTN_LIST)):
         globals()["f1_in_f3_btn"+str(i)].deselect()
 
-def f2_f1_selectall_event():
+def f2_f1_selectall_event() -> None:
     """ 資產負債表，一般類別全選點擊事件 """
     for i in range(len(F2_1_CHECK_BTN_LIST)):
         globals()["f2_in_f1_btn"+str(i)].select()
 
-def f2_f1_dselectall_event():
+def f2_f1_dselectall_event() -> None:
     """ 資產負債表，一般類別取消全選點擊事件 """
     for i in range(len(F2_1_CHECK_BTN_LIST)):
         globals()["f2_in_f1_btn"+str(i)].deselect()
 
-def f2_f2_selectall_event():
+def f2_f2_selectall_event() -> None:
     """ 資產負債表，保險類別全選點擊事件 """
     for i in range(len(F2_2_CHECK_BTN_LIST)):
         globals()["f2_in_f2_btn"+str(i)].select()
 
-def f2_f2_dselectall_event():
+def f2_f2_dselectall_event() -> None:
     """ 資產負債表，保險類別取消全選點擊事件 """
     for i in range(len(F2_2_CHECK_BTN_LIST)):
         globals()["f2_in_f2_btn"+str(i)].deselect()
 
-def f2_f3_selectall_event():
+def f2_f3_selectall_event() -> None:
     """ 資產負債表，銀行類別全選點擊事件 """
     for i in range(len(F2_3_CHECK_BTN_LIST)):
         globals()["f2_in_f3_btn"+str(i)].select()
 
-def f2_f3_dselectall_event():
+def f2_f3_dselectall_event() -> None:
     """ 資產負債表，銀行類別取消全選點擊事件 """
     for i in range(len(F2_3_CHECK_BTN_LIST)):
         globals()["f2_in_f3_btn"+str(i)].deselect()
 
-def f3_f1_selectall_event():
+def f3_f1_selectall_event() -> None:
     """ 現金流量表，一般類別全選點擊事件 """
     for i in range(len(F3_1_CHECK_BTN_LIST)):
         globals()["f3_in_f1_btn"+str(i)].select()
 
-def f3_f1_dselectall_event():
+def f3_f1_dselectall_event() -> None:
     """ 現金流量表，一般類別取消全選點擊事件 """
     for i in range(len(F3_1_CHECK_BTN_LIST)):
         globals()["f3_in_f1_btn"+str(i)].deselect()
 
-def singledownload_path_event():
+def singledownload_path_event() -> None:
     """ 個股下載路徑點擊事件 """
     filename = filedialog.askdirectory(parent=window)
     if not filename:
         filename = "C:/"
-    downloadpath_text.config(state="normal")
-    downloadpath_text.delete(1.0,"end")
-    downloadpath_text.insert(1.0, filename)
-    downloadpath_text.config(state="disable")
+    DOWNLOAD_PATH_TEXT.config(state="normal")
+    DOWNLOAD_PATH_TEXT.delete(1.0,"end")
+    DOWNLOAD_PATH_TEXT.insert(1.0, filename)
+    DOWNLOAD_PATH_TEXT.config(state="disable")
     write_pathconfig(type="single",download_path=filename)
 
-def bulkdownload_path_event():
+def bulkdownload_path_event() -> None:
     """ 批量下載路徑點擊事件 """
     filename = filedialog.askdirectory(parent=window)
     if not filename:
         filename = "C:/"
-    bulkdownloadpath_text.config(state="normal")
-    bulkdownloadpath_text.delete(1.0,"end")
-    bulkdownloadpath_text.insert(1.0, filename)
-    bulkdownloadpath_text.config(state="disable")
+    BULK_DOWNLOAD_PATH_TEXT.config(state="normal")
+    BULK_DOWNLOAD_PATH_TEXT.delete(1.0,"end")
+    BULK_DOWNLOAD_PATH_TEXT.insert(1.0, filename)
+    BULK_DOWNLOAD_PATH_TEXT.config(state="disable")
     write_pathconfig(type="bulk",download_path=filename)
 
-def stocklistpath_event():
+def stocklistpath_event() -> None:
     """ 個股清單路徑點擊事件 """
     filename = filedialog.askopenfilename(parent=window,initialdir="C:/",filetypes = (("excel files","*.xlsx"),("all files","*.*")))
-    stocklistpath_text.config(state="normal")
-    stocklistpath_text.delete(1.0,"end")
-    stocklistpath_text.insert(1.0, filename)
-    stocklistpath_text.config(state="disable")
+    STOCK_LIST_PATH_TEXT.config(state="normal")
+    STOCK_LIST_PATH_TEXT.delete(1.0,"end")
+    STOCK_LIST_PATH_TEXT.insert(1.0, filename)
+    STOCK_LIST_PATH_TEXT.config(state="disable")
 
-def f1_name_initialization():
+def f1_name_initialization() -> None:
     """ 損益表變數實例化 """
     for i in range(len(F1_1_VAR_NAME_lIST)):
         globals()["f1_in_f1_va"+str(i)] = tk.StringVar()
@@ -714,7 +720,7 @@ def f1_name_initialization():
     for i in range(len(F1_3_VAR_NAME_lIST)):
         globals()["f1_in_f3_va"+str(i)] = tk.StringVar()
 
-def f2_name_initialization():
+def f2_name_initialization() -> None:
     """ 資產負債表變數實例化 """
     for i in range(len(F2_1_VAR_NAME_lIST)):
         globals()["f2_in_f1_va"+str(i)] = tk.StringVar()
@@ -723,12 +729,12 @@ def f2_name_initialization():
     for i in range(len(F2_3_VAR_NAME_lIST)):
         globals()["f2_in_f3_va"+str(i)] = tk.StringVar()
 
-def f3_name_initialization():
+def f3_name_initialization() -> None:
     """ 現金流量表變數實例化 """
     for i in range(len(F3_1_VAR_NAME_lIST)):
         globals()["f3_in_f1_va"+str(i)] = tk.StringVar()
 
-def frame1_check_btn():
+def frame1_check_btn() -> tuple[Callable, Callable, Callable]:
     """ 損益表複選單按鈕實例化 """
     frame1_1_list = FRAME1_1_INSIDE_LIST.copy()
     frame1_2_list = FRAME1_2_INSIDE_LIST.copy()
@@ -736,387 +742,438 @@ def frame1_check_btn():
     opt1 = tk.IntVar()
     opt2 = tk.IntVar()
     opt3 = tk.IntVar()
-    frame1_inside_1_sall_rbtn = tk.Radiobutton(frame1_inside_1_text, variable=opt1,value=1,text="全選",
-                                               command=f1_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame1_inside_1_dall_rbtn = tk.Radiobutton(frame1_inside_1_text, variable=opt1,value=2,text="取消全選",
-                                               command=f1_f1_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame1_inside_2_sall_rbtn = tk.Radiobutton(frame1_inside_2_text, var=opt2,value=1,text="全選",
-                                               command=f1_f2_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame1_inside_2_dall_rbtn = tk.Radiobutton(frame1_inside_2_text, var=opt2,value=2,text="取消全選",
-                                               command=f1_f2_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame1_inside_3_sall_rbtn = tk.Radiobutton(frame1_inside_3_text, var=opt3,value=1,text="全選",
-                                               command=f1_f3_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame1_inside_3_dall_rbtn = tk.Radiobutton(frame1_inside_3_text, var=opt3,value=2,text="取消全選",
-                                               command=f1_f3_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame1_inside_1_text.window_create("end", window=frame1_inside_1_sall_rbtn)
-    frame1_inside_1_text.window_create("end", window=frame1_inside_1_dall_rbtn)
-    frame1_inside_2_text.window_create("end", window=frame1_inside_2_sall_rbtn)
-    frame1_inside_2_text.window_create("end", window=frame1_inside_2_dall_rbtn)
-    frame1_inside_3_text.window_create("end", window=frame1_inside_3_sall_rbtn)
-    frame1_inside_3_text.window_create("end", window=frame1_inside_3_dall_rbtn)
+    FRAME_1_INSIDE_1_SALL_RBTN = tk.Radiobutton(FRAME_1_INSIDE_1_TEXT, variable=opt1,value=1,text="全選",
+                                               command=f1_f1_selectall_event,bg="white",width=11,anchor="w",
+                                               font=("microsoft yahei",8,"bold"))
+    FRAME_1_INSIDE_1_DALL_RBTN = tk.Radiobutton(FRAME_1_INSIDE_1_TEXT, variable=opt1,value=2,text="取消全選",
+                                               command=f1_f1_dselectall_event,bg="white",width=10,anchor="w",
+                                               font=("microsoft yahei",8,"bold"))
+    FRAME_1_INSIDE_2_SALL_RBTN = tk.Radiobutton(FRAME_1_INSIDE_2_TEXT, var=opt2,value=1,text="全選",
+                                               command=f1_f2_selectall_event,bg="white",width=11,anchor="w",
+                                               font=("microsoft yahei",8,"bold"))
+    FRAME_1_INSIDE_2_DALL_RBTN = tk.Radiobutton(FRAME_1_INSIDE_2_TEXT, var=opt2,value=2,text="取消全選",
+                                               command=f1_f2_dselectall_event,bg="white",width=10,anchor="w",
+                                               font=("microsoft yahei",8,"bold"))
+    FRAME_1_INSIDE_3_SALL_RBTN = tk.Radiobutton(FRAME_1_INSIDE_3_TEXT, var=opt3,value=1,text="全選",
+                                               command=f1_f3_selectall_event,bg="white",width=11,anchor="w",
+                                               font=("microsoft yahei",8,"bold"))
+    FRAME_1_INSIDE_3_DALL_RBTN = tk.Radiobutton(FRAME_1_INSIDE_3_TEXT, var=opt3,value=2,text="取消全選",
+                                               command=f1_f3_dselectall_event,bg="white",width=10,anchor="w",
+                                               font=("microsoft yahei",8,"bold"))
+    FRAME_1_INSIDE_1_TEXT.window_create("end", window=FRAME_1_INSIDE_1_SALL_RBTN)
+    FRAME_1_INSIDE_1_TEXT.window_create("end", window=FRAME_1_INSIDE_1_DALL_RBTN)
+    FRAME_1_INSIDE_2_TEXT.window_create("end", window=FRAME_1_INSIDE_2_SALL_RBTN)
+    FRAME_1_INSIDE_2_TEXT.window_create("end", window=FRAME_1_INSIDE_2_DALL_RBTN)
+    FRAME_1_INSIDE_3_TEXT.window_create("end", window=FRAME_1_INSIDE_3_SALL_RBTN)
+    FRAME_1_INSIDE_3_TEXT.window_create("end", window=FRAME_1_INSIDE_3_DALL_RBTN)
     for i in range(len(F1_1_CHECK_BTN_LIST)):
         if frame1_1_list[0] in F1_1_BLUE_BTN_LIST:
-            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(frame1_inside_1_text,text=frame1_1_list[0],var=globals()["f1_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame1_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame1_inside_1_text.window_create("end", window=globals()["f1_in_f1_btn"+str(i)])
+            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_1_INSIDE_1_TEXT,text=frame1_1_list[0],
+                                                              var=globals()["f1_in_f1_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",
+                                                              onvalue=frame1_1_list[0],offvalue="",
+                                                              font=("microsoft yahei",8,"bold"))
+            FRAME_1_INSIDE_1_TEXT.window_create("end", window=globals()["f1_in_f1_btn"+str(i)])
         else:
-            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(frame1_inside_1_text,text=frame1_1_list[0],var=globals()["f1_in_f1_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=frame1_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame1_inside_1_text.window_create("end", window=globals()["f1_in_f1_btn"+str(i)])
+            globals()["f1_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_1_INSIDE_1_TEXT,text=frame1_1_list[0],
+                                                              var=globals()["f1_in_f1_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",
+                                                              onvalue=frame1_1_list[0],offvalue="",
+                                                              font=("microsoft yahei",8,"bold"))
+            FRAME_1_INSIDE_1_TEXT.window_create("end", window=globals()["f1_in_f1_btn"+str(i)])
         if len(frame1_1_list) >1:
-            frame1_inside_1_text.insert("end", "\n")
+            FRAME_1_INSIDE_1_TEXT.insert("end", "\n")
         frame1_1_list.pop(0)
     for i in range(len(F1_2_CHECK_BTN_LIST)):
         if frame1_2_list[0] in F1_2_BLUE_BTN_LIST:
-            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(frame1_inside_2_text,text=frame1_2_list[0],var=globals()["f1_in_f2_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame1_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame1_inside_2_text.window_create("end", window=globals()["f1_in_f2_btn"+str(i)])
+            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(FRAME_1_INSIDE_2_TEXT,text=frame1_2_list[0],
+                                                              var=globals()["f1_in_f2_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",
+                                                              onvalue=frame1_2_list[0],offvalue="",
+                                                              font=("microsoft yahei",8,"bold"))
+            FRAME_1_INSIDE_2_TEXT.window_create("end", window=globals()["f1_in_f2_btn"+str(i)])
         else:
-            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(frame1_inside_2_text,text=frame1_2_list[0],var=globals()["f1_in_f2_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=frame1_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame1_inside_2_text.window_create("end", window=globals()["f1_in_f2_btn"+str(i)])
+            globals()["f1_in_f2_btn"+str(i)] = tk.Checkbutton(FRAME_1_INSIDE_2_TEXT,text=frame1_2_list[0],
+                                                              var=globals()["f1_in_f2_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",
+                                                              onvalue=frame1_2_list[0],offvalue="",
+                                                              font=("microsoft yahei",8,"bold"))
+            FRAME_1_INSIDE_2_TEXT.window_create("end", window=globals()["f1_in_f2_btn"+str(i)])
         if len(frame1_2_list) >1:
-            frame1_inside_2_text.insert("end", "\n")
+            FRAME_1_INSIDE_2_TEXT.insert("end", "\n")
         frame1_2_list.pop(0)
     for i in range(len(F1_3_CHECK_BTN_LIST)):
         if frame1_3_list[0] in F1_3_BLUE_BTN_LIST:
-            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(frame1_inside_3_text,text=frame1_3_list[0],var=globals()["f1_in_f3_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame1_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame1_inside_3_text.window_create("end", window=globals()["f1_in_f3_btn"+str(i)])
+            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(FRAME_1_INSIDE_3_TEXT,text=frame1_3_list[0],
+                                                              var=globals()["f1_in_f3_va"+str(i)],
+                                                              width=100,bg="white",fg="blue",anchor="w",
+                                                              onvalue=frame1_3_list[0],offvalue="",
+                                                              font=("microsoft yahei",8,"bold"))
+            FRAME_1_INSIDE_3_TEXT.window_create("end", window=globals()["f1_in_f3_btn"+str(i)])
         else:
-            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(frame1_inside_3_text,text=frame1_3_list[0],var=globals()["f1_in_f3_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=frame1_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame1_inside_3_text.window_create("end", window=globals()["f1_in_f3_btn"+str(i)])
+            globals()["f1_in_f3_btn"+str(i)] = tk.Checkbutton(FRAME_1_INSIDE_3_TEXT,text=frame1_3_list[0],
+                                                              var=globals()["f1_in_f3_va"+str(i)],
+                                                              width=100,bg="white",anchor="w",
+                                                              onvalue=frame1_3_list[0],offvalue="",
+                                                              font=("microsoft yahei",8,"bold"))
+            FRAME_1_INSIDE_3_TEXT.window_create("end", window=globals()["f1_in_f3_btn"+str(i)])
         if len(frame1_3_list) >1:
-            frame1_inside_3_text.insert("end", "\n")
+            FRAME_1_INSIDE_3_TEXT.insert("end", "\n")
         frame1_3_list.pop(0)
-    return frame1_inside_1_sall_rbtn,frame1_inside_2_sall_rbtn,frame1_inside_3_sall_rbtn
+    return FRAME_1_INSIDE_1_SALL_RBTN,FRAME_1_INSIDE_2_SALL_RBTN,FRAME_1_INSIDE_3_SALL_RBTN
 
-def frame2_check_btn():
+def frame2_check_btn() -> tuple[Callable, Callable, Callable]:
     """ 資產負債表複選單按鈕實例化 """
-    frame2_1_list = FRAME2_1_INSIDE_LIST.copy()
-    frame2_2_list = FRAME2_2_INSIDE_LIST.copy()
-    frame2_3_list = FRAME2_3_INSIDE_LIST.copy()
     opt1 = tk.IntVar()
     opt2 = tk.IntVar()
     opt3 = tk.IntVar()
-    frame2_inside_1_sall_rbtn = tk.Radiobutton(frame2_inside_1_text, variable=opt1,value=1,text="全選",
-                                               command=f2_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame2_inside_1_dall_rbtn = tk.Radiobutton(frame2_inside_1_text, variable=opt1,value=2,text="取消全選",
-                                               command=f2_f1_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))  
-    frame2_inside_2_sall_rbtn = tk.Radiobutton(frame2_inside_2_text, var=opt2,value=1,text="全選",
-                                               command=f2_f2_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame2_inside_2_dall_rbtn = tk.Radiobutton(frame2_inside_2_text, var=opt2,value=2,text="取消全選",
-                                               command=f2_f2_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame2_inside_3_sall_rbtn = tk.Radiobutton(frame2_inside_3_text, var=opt3,value=1,text="全選",
-                                               command=f2_f3_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame2_inside_3_dall_rbtn = tk.Radiobutton(frame2_inside_3_text, var=opt3,value=2,text="取消全選",
-                                               command=f2_f3_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame2_inside_1_text.window_create("end", window=frame2_inside_1_sall_rbtn)
-    frame2_inside_1_text.window_create("end", window=frame2_inside_1_dall_rbtn)
-    frame2_inside_2_text.window_create("end", window=frame2_inside_2_sall_rbtn)
-    frame2_inside_2_text.window_create("end", window=frame2_inside_2_dall_rbtn)
-    frame2_inside_3_text.window_create("end", window=frame2_inside_3_sall_rbtn)
-    frame2_inside_3_text.window_create("end", window=frame2_inside_3_dall_rbtn)
+    FRAME_2_INSIDE_1_SALL_RBTN = tk.Radiobutton(FRAME_2_INSIDE_1_TEXT, variable=opt1, value=1, text="全選",
+                                               command=f2_f1_selectall_event, bg="white", width=11, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_2_INSIDE_1_DALL_RBTN = tk.Radiobutton(FRAME_2_INSIDE_1_TEXT, variable=opt1, value=2, text="取消全選",
+                                               command=f2_f1_dselectall_event, bg="white", width=10, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_2_INSIDE_2_SALL_RBTN = tk.Radiobutton(FRAME_2_INSIDE_2_TEXT, var=opt2, value=1, text="全選",
+                                               command=f2_f2_selectall_event, bg="white", width=11, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_2_INSIDE_2_DALL_RBTN = tk.Radiobutton(FRAME_2_INSIDE_2_TEXT, var=opt2, value=2, text="取消全選",
+                                               command=f2_f2_dselectall_event, bg="white", width=10, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_2_INSIDE_3_SALL_RBTN = tk.Radiobutton(FRAME_2_INSIDE_3_TEXT, var=opt3, value=1, text="全選",
+                                               command=f2_f3_selectall_event, bg="white", width=11, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_2_INSIDE_3_DALL_RBTN = tk.Radiobutton(FRAME_2_INSIDE_3_TEXT, var=opt3, value=2, text="取消全選",
+                                               command=f2_f3_dselectall_event, bg="white", width=10, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_2_INSIDE_1_TEXT.window_create("end", window=FRAME_2_INSIDE_1_SALL_RBTN)
+    FRAME_2_INSIDE_1_TEXT.window_create("end", window=FRAME_2_INSIDE_1_DALL_RBTN)
+    FRAME_2_INSIDE_2_TEXT.window_create("end", window=FRAME_2_INSIDE_2_SALL_RBTN)
+    FRAME_2_INSIDE_2_TEXT.window_create("end", window=FRAME_2_INSIDE_2_DALL_RBTN)
+    FRAME_2_INSIDE_3_TEXT.window_create("end", window=FRAME_2_INSIDE_3_SALL_RBTN)
+    FRAME_2_INSIDE_3_TEXT.window_create("end", window=FRAME_2_INSIDE_3_DALL_RBTN)
     for i in range(len(F2_1_CHECK_BTN_LIST)):
-        if frame2_1_list[0] in F2_1_BLUE_BTN_LIST:
-            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_1_text.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
-        elif frame2_1_list[0] in F2_1_GREEN_BTN_LIST:
-            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="green",anchor="w",onvalue=frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_1_text.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
+        if FRAME2_1_INSIDE_LIST[0] in F2_1_BLUE_BTN_LIST:
+            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_1_TEXT,text=FRAME2_1_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f1_va"+str(i)],
+                                                              width=100, bg="white", fg="blue", anchor="w",
+                                                              onvalue=FRAME2_1_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_1_TEXT.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
+        elif FRAME2_1_INSIDE_LIST[0] in F2_1_GREEN_BTN_LIST:
+            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_1_TEXT,text=FRAME2_1_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f1_va"+str(i)],
+                                                              width=100, bg="white", fg="green", anchor="w",
+                                                              onvalue=FRAME2_1_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_1_TEXT.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
         else:
-            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(frame2_inside_1_text,text=frame2_1_list[0],var=globals()["f2_in_f1_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=frame2_1_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_1_text.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
-        if len(frame2_1_list) >1:
-            frame2_inside_1_text.insert("end", "\n")
-        frame2_1_list.pop(0)
+            globals()["f2_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_1_TEXT, text=FRAME2_1_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f1_va"+str(i)],
+                                                              width=100, bg="white", anchor="w",
+                                                              onvalue=FRAME2_1_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_1_TEXT.window_create("end", window=globals()["f2_in_f1_btn"+str(i)])
+        if len(FRAME2_1_INSIDE_LIST) >1:
+            FRAME_2_INSIDE_1_TEXT.insert("end", "\n")
+        FRAME2_1_INSIDE_LIST.pop(0)
     for i in range(len(F2_2_CHECK_BTN_LIST)):
-        if frame2_2_list[0] in F2_2_BLUE_BTN_LIST:
-            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
-        elif frame2_2_list[0] in F2_2_GREEN_BTN_LIST:
-            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
-                                                              width=100,bg="white",fg="green",anchor="w",onvalue=frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
+        if FRAME2_2_INSIDE_LIST[0] in F2_2_BLUE_BTN_LIST:
+            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_2_TEXT, text=FRAME2_2_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f2_va"+str(i)],
+                                                              width=100, bg="white", fg="blue", anchor="w",
+                                                              onvalue=FRAME2_2_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_2_TEXT.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
+        elif FRAME2_2_INSIDE_LIST[0] in F2_2_GREEN_BTN_LIST:
+            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_2_TEXT, text=FRAME2_2_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f2_va"+str(i)],
+                                                              width=100, bg="white", fg="green", anchor="w",
+                                                              onvalue=FRAME2_2_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_2_TEXT.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
         else:
-            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(frame2_inside_2_text,text=frame2_2_list[0],var=globals()["f2_in_f2_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=frame2_2_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_2_text.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
-        if len(frame2_2_list) >1:
-            frame2_inside_2_text.insert("end", "\n")
-        frame2_2_list.pop(0)
+            globals()["f2_in_f2_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_2_TEXT, text=FRAME2_2_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f2_va"+str(i)],
+                                                              width=100, bg="white", anchor="w",
+                                                              onvalue=FRAME2_2_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_2_TEXT.window_create("end", window=globals()["f2_in_f2_btn"+str(i)])
+        if len(FRAME2_2_INSIDE_LIST) >1:
+            FRAME_2_INSIDE_2_TEXT.insert("end", "\n")
+        FRAME2_2_INSIDE_LIST.pop(0)
     for i in range(len(F2_3_CHECK_BTN_LIST)):
-        if frame2_3_list[0] in F2_3_BLUE_BTN_LIST:
-            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_3_text.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
-        elif frame2_3_list[0] in F2_3_GREEN_BTN_LIST:
-            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
-                                                              width=100,bg="white",fg="green",anchor="w",onvalue=frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_3_text.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
+        if FRAME2_3_INSIDE_LIST[0] in F2_3_BLUE_BTN_LIST:
+            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_3_TEXT,text=FRAME2_3_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f3_va"+str(i)],
+                                                              width=100, bg="white", fg="blue", anchor="w",
+                                                              onvalue=FRAME2_3_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_3_TEXT.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
+        elif FRAME2_3_INSIDE_LIST[0] in F2_3_GREEN_BTN_LIST:
+            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_3_TEXT,text=FRAME2_3_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f3_va"+str(i)],
+                                                              width=100, bg="white",fg="green", anchor="w",
+                                                              onvalue=FRAME2_3_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_3_TEXT.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
         else:
-            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(frame2_inside_3_text,text=frame2_3_list[0],var=globals()["f2_in_f3_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=frame2_3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame2_inside_3_text.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
-        if len(frame2_3_list) >1:
-            frame2_inside_3_text.insert("end", "\n")
-        frame2_3_list.pop(0)
-    return frame2_inside_1_sall_rbtn,frame2_inside_2_sall_rbtn,frame2_inside_3_sall_rbtn
+            globals()["f2_in_f3_btn"+str(i)] = tk.Checkbutton(FRAME_2_INSIDE_3_TEXT,text=FRAME2_3_INSIDE_LIST[0],
+                                                              var=globals()["f2_in_f3_va"+str(i)],
+                                                              width=100, bg="white", anchor="w",
+                                                              onvalue=FRAME2_3_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_2_INSIDE_3_TEXT.window_create("end", window=globals()["f2_in_f3_btn"+str(i)])
+        if len(FRAME2_3_INSIDE_LIST) >1:
+            FRAME_2_INSIDE_3_TEXT.insert("end", "\n")
+        FRAME2_3_INSIDE_LIST.pop(0)
+    return FRAME_2_INSIDE_1_SALL_RBTN,FRAME_2_INSIDE_2_SALL_RBTN,FRAME_2_INSIDE_3_SALL_RBTN
 
-def frame3_check_btn():
+def frame3_check_btn() -> tuple[Callable]:
     """ 現金流量表複選單按鈕實例化 """
-    frame3_list = FRAME3_1_INSIDE_LIST.copy()
     opt1 = tk.IntVar()
-    frame3_inside_1_sall_rbtn = tk.Radiobutton(frame3_inside_1_text, variable=opt1,value=1,text="全選",
-                                               command=f3_f1_selectall_event,bg="white",width=11,anchor="w",font=("microsoft yahei",8,"bold"))
-    frame3_inside_1_dall_rbtn = tk.Radiobutton(frame3_inside_1_text, variable=opt1,value=2,text="取消全選",
-                                               command=f3_f1_dselectall_event,bg="white",width=10,anchor="w",font=("microsoft yahei",8,"bold"))  
-    frame3_inside_1_text.window_create("end", window=frame3_inside_1_sall_rbtn)
-    frame3_inside_1_text.window_create("end", window=frame3_inside_1_dall_rbtn)
-    # for i in range(len(F3_1_CHECK_BTN_LIST)):
-    #     if frame3_list[0] in F3_1_BLUE_BTN_LIST:
-    #         globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=frame3_list[0],var=globals()["f3_in_f1_va"+str(i)],
-    #                                                           width=100,bg="white",fg="blue",anchor="w",onvalue=frame3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-    #         frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
-
-    #     else:
-    #         globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=frame3_list[0],var=globals()["f3_in_f1_va"+str(i)],
-    #                                                           width=100,bg="white",anchor="w",onvalue=frame3_list[0],offvalue="",font=("microsoft yahei",8,"bold"))
-    #         frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
-    #     if len(frame3_list) >1:
-    #         frame3_inside_1_text.insert("end", "\n")
-    #     frame3_list.pop(0)
+    FRAME_3_INSIDE_1_SALL_RBTN = tk.Radiobutton(FRAME_3_INSIDE_1_TEXT, variable=opt1,
+                                                value=1,text="全選", command=f3_f1_selectall_event,
+                                                bg="white", width=11, anchor="w",
+                                                font=("microsoft yahei", 8, "bold"))
+    FRAME_3_INSIDE_1_DALL_RBTN = tk.Radiobutton(FRAME_3_INSIDE_1_TEXT, variable=opt1, value=2, text="取消全選",
+                                               command=f3_f1_dselectall_event, bg="white", width=10, anchor="w",
+                                               font=("microsoft yahei", 8, "bold"))
+    FRAME_3_INSIDE_1_TEXT.window_create("end", window=FRAME_3_INSIDE_1_SALL_RBTN)
+    FRAME_3_INSIDE_1_TEXT.window_create("end", window=FRAME_3_INSIDE_1_DALL_RBTN)
     for i in range(len(F3_1_CHECK_BTN_LIST)):
         if FRAME3_1_INSIDE_LIST[0] in F3_1_BLUE_BTN_LIST:
-            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=FRAME3_1_INSIDE_LIST[0],var=globals()["f3_in_f1_va"+str(i)],
-                                                              width=100,bg="white",fg="blue",anchor="w",onvalue=FRAME3_1_INSIDE_LIST[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
+            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_3_INSIDE_1_TEXT, text=FRAME3_1_INSIDE_LIST[0],
+                                                              var=globals()["f3_in_f1_va"+str(i)],
+                                                              width=100, bg="white", fg="blue", anchor="w",
+                                                              onvalue=FRAME3_1_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_3_INSIDE_1_TEXT.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
 
         else:
-            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(frame3_inside_1_text,text=FRAME3_1_INSIDE_LIST[0],var=globals()["f3_in_f1_va"+str(i)],
-                                                              width=100,bg="white",anchor="w",onvalue=FRAME3_1_INSIDE_LIST[0],offvalue="",font=("microsoft yahei",8,"bold"))
-            frame3_inside_1_text.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
+            globals()["f3_in_f1_btn"+str(i)] = tk.Checkbutton(FRAME_3_INSIDE_1_TEXT,text=FRAME3_1_INSIDE_LIST[0],
+                                                              var=globals()["f3_in_f1_va"+str(i)],
+                                                              width=100, bg="white", anchor="w",
+                                                              onvalue=FRAME3_1_INSIDE_LIST[0], offvalue="",
+                                                              font=("microsoft yahei", 8, "bold"))
+            FRAME_3_INSIDE_1_TEXT.window_create("end", window=globals()["f3_in_f1_btn"+str(i)])
         if len(FRAME3_1_INSIDE_LIST) >1:
-            frame3_inside_1_text.insert("end", "\n")
+            FRAME_3_INSIDE_1_TEXT.insert("end", "\n")
         FRAME3_1_INSIDE_LIST.pop(0)
-    return frame3_inside_1_sall_rbtn
+    return FRAME_3_INSIDE_1_SALL_RBTN
 
-align_center(window,1000,700)
+align_center(window, 1000, 700)
 window.update_idletasks()
 
 """GUI物件實例化"""
 
-country_lb = tk.Label(window,text="股票代號/國家： ",font=("新細明體",12),anchor="e")
-country_lb.place(relx=0.01,rely=0.05,relwidth=0.15)
 
-country_btn = ttk.Combobox(window,value=country_list)
-country_btn.place(relx=0.16,rely=0.05,relwidth=0.3)
-country_btn.current(0)
+COUNTRY_LB = tk.Label(window, text="股票代號/國家： ",font=("新細明體", 12), anchor="e")
+COUNTRY_LB.place(relx=0.01, rely=0.05, relwidth=0.15)
 
-market_lb = tk.Label(window,text="市場交易所： ",font=("新細明體",12),anchor="e")
-market_lb.place(relx=0.01,rely=0.12,relwidth=0.15)
+COUNTRY_BTN = ttk.Combobox(window,value=country_list)
+COUNTRY_BTN.place(relx=0.16,rely=0.05,relwidth=0.3)
+COUNTRY_BTN.current(0)
 
-market_btn = ttk.Combobox(window,state="readonly")
-market_btn.place(relx=0.16,rely=0.12,relwidth=0.3)
+MARKET_LB = tk.Label(window, text="市場交易所： ", font=("新細明體", 12), anchor="e")
+MARKET_LB.place(relx=0.01, rely=0.12, relwidth=0.15)
 
-category_lb = tk.Label(window,text="股票類別： ",font=("新細明體",12),anchor="e")
-category_lb.place(relx=0.01,rely=0.19,relwidth=0.15)
+MARKET_BTN = ttk.Combobox(window, state="readonly")
+MARKET_BTN.place(relx=0.16, rely=0.12, relwidth=0.3)
 
-category_btn = ttk.Combobox(window,state= "readonly")
-category_btn.place(relx=0.16,rely=0.19,relwidth=0.3)
+CATEGORY_LB = tk.Label(window,text="股票類別： ", font=("新細明體", 12), anchor="e")
+CATEGORY_LB.place(relx=0.01, rely=0.19, relwidth=0.15)
 
-start_date_lb = tk.Label(window,text="開始日期： ",font=("新細明體",12),anchor="e")
-start_date_lb.place(relx=0.01,rely=0.26,relwidth=0.15)
+CATEGORY_BTN = ttk.Combobox(window,state= "readonly")
+CATEGORY_BTN.place(relx=0.16, rely=0.19, relwidth=0.3)
 
-year,month,day = get_dateconfig()
-start_date_btn = DateEntry(window,width=10,background='darkblue', year=year,month=month,day=day,
+START_DATE_LB = tk.Label(window, text="開始日期： ", font=("新細明體", 12), anchor="e")
+START_DATE_LB.place(relx=0.01, rely=0.26, relwidth=0.15)
+
+YEAR, MONTH, DAY = get_dateconfig()
+START_DATE_BTN = DateEntry(window,width=10,background='darkblue', year=YEAR, month=MONTH, day=DAY,
                            foreground="white", borderwidth=2, locale = "en_us", date_pattern ="yyyy/mm/dd")
-start_date_btn.place(relx=0.16,rely=0.26,relwidth=0.3)
+START_DATE_BTN.place(relx=0.16,rely=0.26,relwidth=0.3)
 
-end_date_lb = tk.Label(window,text="結束日期： ",font=("新細明體",12),anchor="e")
-end_date_lb.place(relx=0.01,rely=0.33,relwidth=0.15)
+END_DATE_LB = tk.Label(window, text="結束日期： ", font=("新細明體",12), anchor="e")
+END_DATE_LB.place(relx=0.01, rely=0.33, relwidth=0.15)
 
-end_date_btn = DateEntry(window,width=10,background='darkblue', foreground="white", borderwidth=2, locale = "en_us", date_pattern ="yyyy/mm/dd")
-end_date_btn.place(relx=0.16,rely=0.33,relwidth=0.3)
+END_DATE_BTN = DateEntry(window, width=10, background="darkblue", foreground="white", borderwidth=2, locale = "en_us", date_pattern ="yyyy/mm/dd")
+END_DATE_BTN.place(relx=0.16, rely=0.33, relwidth=0.3)
 
-stext = ScrolledText(window,bg="white",selectbackground="blue")
-stext.config(state="disabled",font=("新細明體",13))
-stext.place(relx=0.01,rely=0.4,relwidth=0.49,relheight=0.2)
+STEXT = ScrolledText(window, bg="white", selectbackground="blue")
+STEXT.config(state="disabled", font=("新細明體", 13))
+STEXT.place(relx=0.01, rely=0.4, relwidth=0.49, relheight=0.2)
 
-window_spea = ttk.Separator(window,orient="horizontal")
-window_spea.place(relx=0,rely=0.62,relwidth=1)
+WINDOW_SPEA = ttk.Separator(window,orient="horizontal")
+WINDOW_SPEA.place(relx=0, rely=0.62, relwidth=1)
 
-downloadpath_lb = tk.Label(window,text="個股下載路徑： ",font=("新細明體",12),anchor="e")
-downloadpath_lb.place(relx=0.01,rely=0.632,relwidth=0.15)
+DOWNLOAD_PATH_LB = tk.Label(window, text="個股下載路徑： ", font=("新細明體", 12), anchor="e")
+DOWNLOAD_PATH_LB.place(relx=0.01, rely=0.632, relwidth=0.15)
 
-downloadpath_btn = ttk.Button(window,text="選擇路徑",command=singledownload_path_event)
-downloadpath_btn.place(relx=0.16,rely=0.63)
+DOWNLOAD_PATH_BTN = ttk.Button(window, text="選擇路徑", command=singledownload_path_event)
+DOWNLOAD_PATH_BTN.place(relx=0.16, rely=0.63)
 
-downloadpath_text = tk.Text(window)
-downloadpath_text.config(state="normal")
-downloadpath_text.insert(1.0,"C:/")
-downloadpath_text.config(state="disabled")
-downloadpath_text.place(relx=0.03,rely=0.7,relwidth=0.4,relheight=0.04)
+DOWNLOAD_PATH_TEXT = tk.Text(window)
+DOWNLOAD_PATH_TEXT.config(state="normal")
+DOWNLOAD_PATH_TEXT.insert(1.0, "C:/")
+DOWNLOAD_PATH_TEXT.config(state="disabled")
+DOWNLOAD_PATH_TEXT.place(relx=0.03, rely=0.7, relwidth=0.4, relheight=0.04)
 
-bulkdownloadpath_lb = tk.Label(window,text="批量下載路徑： ",font=("新細明體",12),anchor="e")
-bulkdownloadpath_lb.place(relx=0.01,rely=0.755,relwidth=0.15)
+BULK_DOWNLOAD_PATH_LB = tk.Label(window, text="批量下載路徑： ", font=("新細明體", 12), anchor="e")
+BULK_DOWNLOAD_PATH_LB.place(relx=0.01, rely=0.755, relwidth=0.15)
 
-bulkdownloadpath_btn = ttk.Button(window,text="選擇路徑",command=bulkdownload_path_event)
-bulkdownloadpath_btn.place(relx=0.16,rely=0.75)
+BULK_DOWNLOAD_PATH_BTN = ttk.Button(window, text="選擇路徑", command=bulkdownload_path_event)
+BULK_DOWNLOAD_PATH_BTN.place(relx=0.16, rely=0.75)
 
-bulkdownloadpath_text = tk.Text(window)
-bulkdownloadpath_text.config(state="normal")
-bulkdownloadpath_text.insert(1.0,"C:/")
-bulkdownloadpath_text.config(state="disabled")
-bulkdownloadpath_text.place(relx=0.03,rely=0.82,relwidth=0.4,relheight=0.04)
+BULK_DOWNLOAD_PATH_TEXT = tk.Text(window)
+BULK_DOWNLOAD_PATH_TEXT.config(state="normal")
+BULK_DOWNLOAD_PATH_TEXT.insert(1.0, "C:/")
+BULK_DOWNLOAD_PATH_TEXT.config(state="disabled")
+BULK_DOWNLOAD_PATH_TEXT.place(relx=0.03, rely=0.82, relwidth=0.4, relheight=0.04)
 
-stocklistpath_lb = tk.Label(window,text="指定清單檔案： ",font=("新細明體",12),anchor="e")
-stocklistpath_lb.place(relx=0.51,rely=0.635,relwidth=0.15)
+STOCK_LIST_PATH_LB = tk.Label(window, text="指定清單檔案： ", font=("新細明體", 12), anchor="e")
+STOCK_LIST_PATH_LB.place(relx=0.51, rely=0.635, relwidth=0.15)
 
-stocklistpath_btn = ttk.Button(window,text="選擇檔案",command=stocklistpath_event)
-stocklistpath_btn.place(relx=0.66,rely=0.63)
+STOCK_LIST_PATH_BTN = ttk.Button(window,text="選擇檔案", command=stocklistpath_event)
+STOCK_LIST_PATH_BTN.place(relx=0.66, rely=0.63)
 
-stocklistpath_text = tk.Text(window)
-stocklistpath_text.config(state="disabled")
-stocklistpath_text.place(relx=0.53,rely=0.7,relwidth=0.4,relheight=0.04)
+STOCK_LIST_PATH_TEXT = tk.Text(window)
+STOCK_LIST_PATH_TEXT.config(state="disabled")
+STOCK_LIST_PATH_TEXT.place(relx=0.53, rely=0.7, relwidth=0.4, relheight=0.04)
 
-crawlerstocklist_btn = ttk.Button(window,text="下載個股清單",command=crawlerstocklist_btn_event)
-crawlerstocklist_btn.place(relx=0.53,rely=0.8)
+CRAWLER_STOCK_LIST_BTN = ttk.Button(window, text="下載個股清單", command=crawlerstocklist_btn_event)
+CRAWLER_STOCK_LIST_BTN.place(relx=0.53, rely=0.8)
 
-stocktimer_lb = tk.Label(window,text="",font=("新細明體",10),anchor="e")
-stocktimer_lb.place(relx=0.53,rely=0.88)
+STOCK_TIMER_LB = tk.Label(window,text="", font=("新細明體", 10), anchor="e")
+STOCK_TIMER_LB.place(relx=0.53, rely=0.88)
 
-bulkcrawler_btn = ttk.Button(window,text="下載清單資料",command=bulkcrawler_btn_event)
-bulkcrawler_btn.place(relx=0.68,rely=0.8)
+BULK_CRAWLER_BTN = ttk.Button(window, text="下載清單資料", command=bulkcrawler_btn_event)
+BULK_CRAWLER_BTN.place(relx=0.68, rely=0.8)
 
-bulk_start_btn = ttk.Button(window,text="暫停下載",command=stopcrawler_btn_event)
-bulk_start_btn.place(relx=0.68,rely=0.87)
+BULK_START_BTN = ttk.Button(window, text="暫停下載", command=stopcrawler_btn_event)
+BULK_START_BTN.place(relx=0.68, rely=0.87)
 
-singlecrawler_btn = ttk.Button(window,text="下載目標個股",command=singlecrawler_btn_event)
-singlecrawler_btn.place(relx=0.83,rely=0.8)
+SINGLE_CRAWLER_BTN = ttk.Button(window,text="下載目標個股", command=singlecrawler_btn_event)
+SINGLE_CRAWLER_BTN.place(relx=0.83, rely=0.8)
 
-progress = ttk.Progressbar(window,style="red.Horizontal.TProgressbar",orient="horizontal",mode="determinate")
-progress.place(relx=0.53,rely=0.94,relwidth=0.43)
+PROGRESS = ttk.Progressbar(window, style="red.Horizontal.TProgressbar", orient="horizontal", mode="determinate")
+PROGRESS.place(relx=0.53 ,rely=0.94, relwidth=0.43)
 
 """ notebook&frame實例化 """
 
-notebook = ttk.Notebook(window)
-notebook.place(relx=0.5,rely=0,relwidth=0.5,relheight=0.6)
-frame_1 = tk.Frame(notebook)
-frame_2 = tk.Frame(notebook)
-frame_3 = tk.Frame(notebook)
+NOTEBOOK = ttk.Notebook(window)
+NOTEBOOK.place(relx=0.5, rely=0, relwidth=0.5, relheight=0.6)
+FRAME_1 = tk.Frame(NOTEBOOK)
+FRAME_2 = tk.Frame(NOTEBOOK)
+FRAME_3 = tk.Frame(NOTEBOOK)
 
 """ frame grid設定 """
 
-notebook.add(frame_1,text="損益表",padding=10)
-notebook.add(frame_2,text="資產負債表",padding=10)
-notebook.add(frame_3,text="現金流",padding=10)
+NOTEBOOK.add(FRAME_1, text="損益表", padding=10)
+NOTEBOOK.add(FRAME_2, text="資產負債表", padding=10)
+NOTEBOOK.add(FRAME_3, text="現金流", padding=10)
 
 """ frame1實例化 """
 
-frame_1_notebook = ttk.Notebook(frame_1)
-frame_1_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame1_inside_1 = tk.Frame(frame_1_notebook)
-frame1_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame1_inside_1_scollbar = tk.Scrollbar(frame1_inside_1)
-frame1_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame1_inside_1_text = tk.Text(frame1_inside_1)
-frame1_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame1_inside_1_text.configure(state="disabled")
-frame1_inside_1_scollbar.config(command=frame1_inside_1_text.yview)
-frame1_inside_1_text.config(yscrollcommand=frame1_inside_1_scollbar.set)
-frame1_inside_2 = tk.Frame(frame_1_notebook)
-frame1_inside_2.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame1_inside_2_scollbar = tk.Scrollbar(frame1_inside_2)
-frame1_inside_2_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame1_inside_2_text = tk.Text(frame1_inside_2)
-frame1_inside_2_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame1_inside_2_text.configure(state="disabled")
-frame1_inside_2_scollbar.config(command=frame1_inside_2_text.yview)
-frame1_inside_2_text.config(yscrollcommand=frame1_inside_2_scollbar.set)
-frame1_inside_3 = tk.Frame(frame_1_notebook)
-frame1_inside_3.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame1_inside_3_scollbar = tk.Scrollbar(frame1_inside_3)
-frame1_inside_3_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame1_inside_3_text = tk.Text(frame1_inside_3)
-frame1_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame1_inside_3_text.configure(state="disabled")
-frame1_inside_3_scollbar.config(command=frame1_inside_3_text.yview)
-frame1_inside_3_text.config(yscrollcommand=frame1_inside_3_scollbar.set)
+FRAME_1_NOTEBOOK = ttk.Notebook(FRAME_1)
+FRAME_1_NOTEBOOK.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_1_INSIDE_1 = tk.Frame(FRAME_1_NOTEBOOK)
+FRAME_1_INSIDE_1.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_1_INSIDE_1_SCOLLBAR = tk.Scrollbar(FRAME_1_INSIDE_1)
+FRAME_1_INSIDE_1_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_1_INSIDE_1_TEXT = tk.Text(FRAME_1_INSIDE_1)
+FRAME_1_INSIDE_1_TEXT.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+FRAME_1_INSIDE_1_TEXT.configure(state="disabled")
+FRAME_1_INSIDE_1_SCOLLBAR.config(command=FRAME_1_INSIDE_1_TEXT.yview)
+FRAME_1_INSIDE_1_TEXT.config(yscrollcommand=FRAME_1_INSIDE_1_SCOLLBAR.set)
+FRAME_1_INSIDE_2 = tk.Frame(FRAME_1_NOTEBOOK)
+FRAME_1_INSIDE_2.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_1_INSIDE_2_SCOLLBAR = tk.Scrollbar(FRAME_1_INSIDE_2)
+FRAME_1_INSIDE_2_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_1_INSIDE_2_TEXT = tk.Text(FRAME_1_INSIDE_2)
+FRAME_1_INSIDE_2_TEXT.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+FRAME_1_INSIDE_2_TEXT.configure(state="disabled")
+FRAME_1_INSIDE_2_SCOLLBAR.config(command=FRAME_1_INSIDE_2_TEXT.yview)
+FRAME_1_INSIDE_2_TEXT.config(yscrollcommand=FRAME_1_INSIDE_2_SCOLLBAR.set)
+FRAME_1_INSIDE_3 = tk.Frame(FRAME_1_NOTEBOOK)
+FRAME_1_INSIDE_3.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_1_INSIDE_3_SCOLLBAR = tk.Scrollbar(FRAME_1_INSIDE_3)
+FRAME_1_INSIDE_3_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_1_INSIDE_3_TEXT = tk.Text(FRAME_1_INSIDE_3)
+FRAME_1_INSIDE_3_TEXT.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+FRAME_1_INSIDE_3_TEXT.configure(state="disabled")
+FRAME_1_INSIDE_3_SCOLLBAR.config(command=FRAME_1_INSIDE_3_TEXT.yview)
+FRAME_1_INSIDE_3_TEXT.config(yscrollcommand=FRAME_1_INSIDE_3_SCOLLBAR.set)
 f1_name_initialization()
-frame1_inside_1_sall_rbtn,frame1_inside_2_sall_rbtn,frame1_inside_3_sall_rbtn = frame1_check_btn()
-frame_1_notebook.add(frame1_inside_1,text="一般類別")
-frame_1_notebook.add(frame1_inside_2,text="保險類別")
-frame_1_notebook.add(frame1_inside_3,text="銀行類別")
+FRAME_1_INSIDE_1_SALL_RBTN, FRAME_1_INSIDE_2_SALL_RBTN, FRAME_1_INSIDE_3_SALL_RBTN = frame1_check_btn()
+FRAME_1_NOTEBOOK.add(FRAME_1_INSIDE_1, text="一般類別")
+FRAME_1_NOTEBOOK.add(FRAME_1_INSIDE_2, text="保險類別")
+FRAME_1_NOTEBOOK.add(FRAME_1_INSIDE_3, text="銀行類別")
 
 """ frame2實例化 """
 
-frame_2_notebook = ttk.Notebook(frame_2)
-frame_2_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame2_inside_1 = tk.Frame(frame_2_notebook)
-frame2_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame2_inside_1_scollbar = tk.Scrollbar(frame2_inside_1)
-frame2_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame2_inside_1_text = tk.Text(frame2_inside_1)
-frame2_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame2_inside_1_text.configure(state="disabled")
-frame2_inside_1_scollbar.config(command=frame2_inside_1_text.yview)
-frame2_inside_1_text.config(yscrollcommand=frame2_inside_1_scollbar.set)
-frame2_inside_2 = tk.Frame(frame_2_notebook)
-frame2_inside_2.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame2_inside_2_scollbar = tk.Scrollbar(frame2_inside_2)
-frame2_inside_2_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame2_inside_2_text = tk.Text(frame2_inside_2)
-frame2_inside_2_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame2_inside_2_text.configure(state="disabled")
-frame2_inside_2_scollbar.config(command=frame2_inside_2_text.yview)
-frame2_inside_2_text.config(yscrollcommand=frame2_inside_2_scollbar.set)
-frame2_inside_3 = tk.Frame(frame_2_notebook)
-frame2_inside_3.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame2_inside_3_scollbar = tk.Scrollbar(frame2_inside_3)
-frame2_inside_3_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame2_inside_3_text = tk.Text(frame2_inside_3)
-frame2_inside_3_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame2_inside_3_text.configure(state="disabled")
-frame2_inside_3_scollbar.config(command=frame2_inside_3_text.yview)
-frame2_inside_3_text.config(yscrollcommand=frame2_inside_3_scollbar.set)
+FRAME_2_NOTEBOOK = ttk.Notebook(FRAME_2)
+FRAME_2_NOTEBOOK.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_2_INSIDE_1 = tk.Frame(FRAME_2_NOTEBOOK)
+FRAME_2_INSIDE_1.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_2_INSIDE_1_SCOLLBAR = tk.Scrollbar(FRAME_2_INSIDE_1)
+FRAME_2_INSIDE_1_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_2_INSIDE_1_TEXT = tk.Text(FRAME_2_INSIDE_1)
+FRAME_2_INSIDE_1_TEXT.place(relx=0 ,rely=0, relwidth=0.95, relheight=1)
+FRAME_2_INSIDE_1_TEXT.configure(state="disabled")
+FRAME_2_INSIDE_1_SCOLLBAR.config(command=FRAME_2_INSIDE_1_TEXT.yview)
+FRAME_2_INSIDE_1_TEXT.config(yscrollcommand=FRAME_2_INSIDE_1_SCOLLBAR.set)
+FRAME_2_INSIDE_2 = tk.Frame(FRAME_2_NOTEBOOK)
+FRAME_2_INSIDE_2.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_2_INSIDE_2_SCOLLBAR = tk.Scrollbar(FRAME_2_INSIDE_2)
+FRAME_2_INSIDE_2_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_2_INSIDE_2_TEXT = tk.Text(FRAME_2_INSIDE_2)
+FRAME_2_INSIDE_2_TEXT.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+FRAME_2_INSIDE_2_TEXT.configure(state="disabled")
+FRAME_2_INSIDE_2_SCOLLBAR.config(command=FRAME_2_INSIDE_2_TEXT.yview)
+FRAME_2_INSIDE_2_TEXT.config(yscrollcommand=FRAME_2_INSIDE_2_SCOLLBAR.set)
+FRAME2_INSIDE_3 = tk.Frame(FRAME_2_NOTEBOOK)
+FRAME2_INSIDE_3.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_2_INSIDE_3_SCOLLBAR = tk.Scrollbar(FRAME2_INSIDE_3)
+FRAME_2_INSIDE_3_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_2_INSIDE_3_TEXT = tk.Text(FRAME2_INSIDE_3)
+FRAME_2_INSIDE_3_TEXT.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+FRAME_2_INSIDE_3_TEXT.configure(state="disabled")
+FRAME_2_INSIDE_3_SCOLLBAR.config(command=FRAME_2_INSIDE_3_TEXT.yview)
+FRAME_2_INSIDE_3_TEXT.config(yscrollcommand=FRAME_2_INSIDE_3_SCOLLBAR.set)
 f2_name_initialization()
-frame2_inside_1_sall_rbtn,frame2_inside_2_sall_rbtn,frame2_inside_3_sall_rbtn = frame2_check_btn()
-frame_2_notebook.add(frame2_inside_1,text="一般類別")
-frame_2_notebook.add(frame2_inside_2,text="保險類別")
-frame_2_notebook.add(frame2_inside_3,text="銀行類別")
+FRAME_2_INSIDE_1_SALL_RBTN, FRAME_2_INSIDE_2_SALL_RBTN, FRAME_2_INSIDE_3_SALL_RBTN = frame2_check_btn()
+FRAME_2_NOTEBOOK.add(FRAME_2_INSIDE_1, text="一般類別")
+FRAME_2_NOTEBOOK.add(FRAME_2_INSIDE_2, text="保險類別")
+FRAME_2_NOTEBOOK.add(FRAME2_INSIDE_3, text="銀行類別")
 
 """ frame3實例化 """
 
-frame_3_notebook = ttk.Notebook(frame_3)
-frame_3_notebook.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame3_inside_1 = tk.Frame(frame_3_notebook)
-frame3_inside_1.place(relx=0,rely=0,relwidth=1,relheight=1)
-frame3_inside_1_scollbar = tk.Scrollbar(frame3_inside_1)
-frame3_inside_1_scollbar.place(relx=0.95,relwidth=0.05,relheight=1)
-frame3_inside_1_text = tk.Text(frame3_inside_1)
-frame3_inside_1_text.place(relx=0,rely=0,relwidth=0.95,relheight=1)
-frame3_inside_1_text.configure(state="disabled")
-frame3_inside_1_scollbar.config(command=frame3_inside_1_text.yview)
-frame3_inside_1_text.config(yscrollcommand=frame3_inside_1_scollbar.set)
+FRAME_3_NOTEBOOK = ttk.Notebook(FRAME_3)
+FRAME_3_NOTEBOOK.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_3_INSIDE_1 = tk.Frame(FRAME_3_NOTEBOOK)
+FRAME_3_INSIDE_1.place(relx=0, rely=0, relwidth=1, relheight=1)
+FRAME_3_INSIDE_1_SCOLLBAR = tk.Scrollbar(FRAME_3_INSIDE_1)
+FRAME_3_INSIDE_1_SCOLLBAR.place(relx=0.95, relwidth=0.05, relheight=1)
+FRAME_3_INSIDE_1_TEXT = tk.Text(FRAME_3_INSIDE_1)
+FRAME_3_INSIDE_1_TEXT.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+FRAME_3_INSIDE_1_TEXT.configure(state="disabled")
+FRAME_3_INSIDE_1_SCOLLBAR.config(command=FRAME_3_INSIDE_1_TEXT.yview)
+FRAME_3_INSIDE_1_TEXT.config(yscrollcommand=FRAME_3_INSIDE_1_SCOLLBAR.set)
 f3_name_initialization()
-frame3_inside_1_sall_rbtn = frame3_check_btn()
-frame_3_notebook.add(frame3_inside_1,text="一般類別")
+FRAME_3_INSIDE_1_SALL_RBTN = frame3_check_btn()
+FRAME_3_NOTEBOOK.add(FRAME_3_INSIDE_1, text="一般類別")
 
 """ 事件綁定 """
 
-start_date_btn.bind("<<DateEntrySelected>>", start_date_btn_event)
-country_btn.bind("<<ComboboxSelected>>", country_btn_event)
-country_btn.bind("<Return>",country_btn_enter_event)
+START_DATE_BTN.bind("<<DateEntrySelected>>", start_date_btn_event)
+COUNTRY_BTN.bind("<<ComboboxSelected>>", country_btn_event)
+COUNTRY_BTN.bind("<Return>", country_btn_enter_event)
 
 """複選單按鈕實例化"""
 
-f1_1config,f1_2config,f1_3config,f2_1config,f2_2config,f2_3config,f3config = get_checkboxconfig()
+f1_1config, f1_2config, f1_3config, f2_1config, f2_2config, f2_3config, f3config = get_checkboxconfig()
+
 for i in range(len(F1_1_CHECK_BTN_LIST)):
     if f1_1config[i]:
         globals()["f1_in_f1_btn"+str(i)].select()
@@ -1155,25 +1212,25 @@ for i in range(len(F3_1_CHECK_BTN_LIST)):
 
 """複選單按鈕預設全選"""
 
-frame1_inside_1_sall_rbtn.select()
-frame1_inside_2_sall_rbtn.select()
-frame1_inside_3_sall_rbtn.select()
-frame2_inside_1_sall_rbtn.select()
-frame2_inside_2_sall_rbtn.select()
-frame2_inside_3_sall_rbtn.select()
-frame3_inside_1_sall_rbtn.select()
+FRAME_1_INSIDE_1_SALL_RBTN.select()
+FRAME_1_INSIDE_2_SALL_RBTN.select()
+FRAME_1_INSIDE_3_SALL_RBTN.select()
+FRAME_2_INSIDE_1_SALL_RBTN.select()
+FRAME_2_INSIDE_2_SALL_RBTN.select()
+FRAME_2_INSIDE_3_SALL_RBTN.select()
+FRAME_3_INSIDE_1_SALL_RBTN.select()
 
 """ 讀取存檔的變數設定 """
 
 single,bulk = get_pathconfig()
-downloadpath_text.config(state="normal")
-downloadpath_text.delete(1.0,"end")
-downloadpath_text.insert(1.0, single)
-downloadpath_text.config(state="disable")
-bulkdownloadpath_text.config(state="normal")
-bulkdownloadpath_text.delete(1.0,"end")
-bulkdownloadpath_text.insert(1.0, bulk)
-bulkdownloadpath_text.config(state="disable")
+DOWNLOAD_PATH_TEXT.config(state="normal")
+DOWNLOAD_PATH_TEXT.delete(1.0, "end")
+DOWNLOAD_PATH_TEXT.insert(1.0, single)
+DOWNLOAD_PATH_TEXT.config(state="disable")
+BULK_DOWNLOAD_PATH_TEXT.config(state="normal")
+BULK_DOWNLOAD_PATH_TEXT.delete(1.0, "end")
+BULK_DOWNLOAD_PATH_TEXT.insert(1.0, bulk)
+BULK_DOWNLOAD_PATH_TEXT.config(state="disable")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     window.mainloop()

@@ -16,8 +16,8 @@ import pandas as pd
 import requests
 import random
 
-user_agent = UserAgent()
-headers = {'User-Agent': user_agent.random}
+# user_agent = UserAgent()
+# headers = {'User-Agent': user_agent.random}
 
 def get_dividend(url,pair_id):
     """股息URL測試"""
@@ -79,8 +79,13 @@ def get_more_dividend(pair_id,last_timestamp):
 
 # print(get_dividend(url="https://hk.investing.com/equities/formosa-plasti",pair_id="103008"))
 
-profitloss = 0
+# profitloss = 0
 
+
+if __name__ == "__main__":
+    wb = load_workbook("(8150)南茂科技2022-06-07.xlsx")
+    ws = wb["股息整理"]
+    print(ws["J2"].value)
 
 
 

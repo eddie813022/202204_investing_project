@@ -1,0 +1,2 @@
+[mypy]
+ignore_missing_imports = True	# 避免出現import warning
