@@ -1,9 +1,9 @@
-from tkinter import ttk,filedialog
+from tkinter import ttk, filedialog
 from tkinter.scrolledtext import ScrolledText
 from win32com.client import Dispatch
 from pathlib import Path
-from time import perf_counter,perf_counter
-from openpyxl import Workbook,load_workbook
+from time import perf_counter, perf_counter
+from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from typing import Any
 from icon import img
